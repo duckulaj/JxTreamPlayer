@@ -1,0 +1,8 @@
+<div th:fragment="items">
+    <div th:if="${#lists.isEmpty(items)}">
+        <p>No items found for this category.</p>
+    </div>
+    <ul th:if="${!#lists.isEmpty(items)}">
+        <li th:each="item : ${items}" th:text="${item.name}"></li>
+    </ul>
+</div>

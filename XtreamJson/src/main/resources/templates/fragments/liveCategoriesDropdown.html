@@ -1,0 +1,14 @@
+<div th:fragment="dropdown">
+    <label for="live-category-select">Select Live Category:</label>
+    <select id="live-category-select"
+            name="categoryId"
+            hx-get="/liveCategoryItems"
+            hx-target="#live-category-items"
+            hx-trigger="change"
+            hx-include="[name=categoryId]">
+        <option value="">-- Choose a category --</option>
+        <option th:each="cat : ${categories}"
+                th:value="${cat.categoryId}"
+                th:text="${cat.categoryName}"></option>
+    </select>
+</div>

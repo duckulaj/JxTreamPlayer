@@ -2,8 +2,27 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>XtreamJson Home</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
 <body>
     <h1 th:text="${message}">Welcome to XtreamJson Home Page!</h1>
+    <button 
+        hx-get="/resetDatabase" 
+        hx-target="#reset-status" 
+        hx-swap="innerHTML"
+    >
+        Reset Database
+    </button>
+    <div id="reset-status"></div>
+
+    <hr/>
+    <a href="#" 
+       hx-get="/liveCategoriesDropdown" 
+       hx-target="#live-category-dropdown" 
+       hx-swap="innerHTML">
+        Show Live Categories
+    </a>
+    <div id="live-category-dropdown"></div>
+    <div id="live-category-items"></div>
 </body>
 </html>

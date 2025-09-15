@@ -2,6 +2,7 @@ package com.hawkins.xtreamjson.data;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import lombok.Data;
@@ -35,6 +36,7 @@ public class LiveStream {
     @JsonProperty("tv_archive")
     private int tvArchive;
     @JsonProperty("direct_source")
+    @Column(length = 8192)
     private String directSource;
     @JsonProperty("tv_archive_duration")
     private int tvArchiveDuration;

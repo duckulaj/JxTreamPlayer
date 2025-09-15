@@ -1,7 +1,6 @@
 package com.hawkins.xtreamjson;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -18,18 +17,6 @@ public class XtreamJsonApplication {
     @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();
-    }
-
-    @Bean
-    public CommandLineRunner callHomeEndpoint(RestTemplate restTemplate) {
-        return args -> {
-            try {
-                String response = restTemplate.getForObject("http://localhost:8080/", String.class);
-                System.out.println("Home endpoint called on startup. Response: " + response);
-            } catch (Exception e) {
-                System.err.println("Failed to call / endpoint on startup: " + e.getMessage());
-            }
-        };
     }
 
     @Bean
