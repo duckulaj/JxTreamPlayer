@@ -1,4 +1,4 @@
-package com.hawkins.xtreamjson;
+package com.hawkins.xtreamjson.component;
 
 import java.util.List;
 
