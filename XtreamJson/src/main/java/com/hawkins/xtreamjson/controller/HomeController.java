@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.hawkins.xtreamjson.data.LiveCategoryRepository;
 import com.hawkins.xtreamjson.data.LiveStreamRepository;
+import com.hawkins.xtreamjson.data.MovieCategoryRepository;
+import com.hawkins.xtreamjson.data.MovieStreamRepository;
 import com.hawkins.xtreamjson.service.JsonService;
 
 @Controller
@@ -15,12 +17,16 @@ public class HomeController {
     private final JsonService jsonService;
     private final LiveCategoryRepository liveCategoryRepository;
     private final LiveStreamRepository liveStreamRepository;
+    private final MovieCategoryRepository movieCategoryRepository;
+    private final MovieStreamRepository movieStreamRepository;
 
     @Autowired
-    public HomeController(JsonService jsonService, LiveCategoryRepository liveCategoryRepository, LiveStreamRepository liveStreamRepository) {
+    public HomeController(JsonService jsonService, LiveCategoryRepository liveCategoryRepository, LiveStreamRepository liveStreamRepository, MovieCategoryRepository movieCategoryRepository, MovieStreamRepository movieStreamRepository) {
         this.jsonService = jsonService;
         this.liveCategoryRepository = liveCategoryRepository;
         this.liveStreamRepository = liveStreamRepository;
+        this.movieCategoryRepository = movieCategoryRepository;
+        this.movieStreamRepository = movieStreamRepository;
     }
 
     @GetMapping("/")
@@ -50,5 +56,17 @@ public class HomeController {
     public String liveCategoryItems(@RequestParam("categoryId") String categoryId, Model model) {
         model.addAttribute("items", liveStreamRepository.findByCategoryId(categoryId));
         return "fragments/liveCategoryItems :: items";
+    }
+
+    @GetMapping("/movieCategoriesDropdown")
+    public String movieCategoriesDropdown(Model model) {
+        model.addAttribute("categories", jsonService.getAllMovieCategories());
+        return "fragments/movieCategoriesDropdown :: dropdown";
+    }
+
+    @GetMapping("/movieCategoryItems")
+    public String movieCategoryItems(@RequestParam("categoryId") String categoryId, Model model) {
+        model.addAttribute("items", jsonService.getMoviesByCategory(categoryId));
+        return "fragments/movieCategoryItems :: items";
     }
 }

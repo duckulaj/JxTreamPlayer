@@ -2,27 +2,100 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>XtreamJson Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
+    <style>
+        body { padding-top: 70px; }
+        .movie-item, .live-item { padding: 0.5rem 0; border-bottom: 1px solid #eee; }
+        .navbar-brand { font-weight: bold; }
+    </style>
 </head>
 <body>
-    <h1 th:text="${message}">Welcome to XtreamJson Home Page!</h1>
-    <button 
-        hx-get="/resetDatabase" 
-        hx-target="#reset-status" 
-        hx-swap="innerHTML"
-    >
-        Reset Database
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">XtreamJson</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarActions" aria-controls="navbarActions" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
     </button>
-    <div id="reset-status"></div>
+    <div class="collapse navbar-collapse" id="navbarActions">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <button class="btn btn-outline-light me-2 my-1" 
+                  hx-get="/resetDatabase" 
+                  hx-target="#reset-status" 
+                  hx-swap="innerHTML">
+            Reset Database
+          </button>
+        </li>
+        <li class="nav-item">
+          <a class="btn btn-outline-light me-2 my-1" href="#" 
+             hx-get="/liveCategoriesDropdown" 
+             hx-target="#live-category-dropdown" 
+             hx-swap="innerHTML">
+            Show Live Categories
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="btn btn-outline-light my-1" href="#" 
+             hx-get="/movieCategoriesDropdown" 
+             hx-target="#movie-category-dropdown" 
+             hx-swap="innerHTML">
+            Show Movie Categories
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
 
-    <hr/>
-    <a href="#" 
-       hx-get="/liveCategoriesDropdown" 
-       hx-target="#live-category-dropdown" 
-       hx-swap="innerHTML">
-        Show Live Categories
-    </a>
-    <div id="live-category-dropdown"></div>
-    <div id="live-category-items"></div>
+<div class="container mt-4">
+    <h1 class="mb-4" th:text="${message}">Welcome to XtreamJson Home Page!</h1>
+    <div id="reset-status" class="mb-3"></div>
+
+    <div class="row">
+      <div class="col-md-6">
+        <div id="live-category-dropdown"></div>
+        <div id="live-category-items"></div>
+      </div>
+      <div class="col-md-6">
+        <div id="movie-category-dropdown"></div>
+        <div id="movie-category-items"></div>
+      </div>
+    </div>
+</div>
+
+<script>
+document.body.addEventListener('change', function(e) {
+    if (e.target && e.target.id === 'movieCategorySelect') {
+        const categoryId = e.target.value;
+        if (categoryId) {
+            fetch(`/movieCategoryItems?categoryId=${categoryId}`)
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('movie-category-items').innerHTML = html;
+                    // Initialize Clappr players for MKV sources
+                    document.querySelectorAll('.clappr-player').forEach(function(div) {
+                        const source = div.getAttribute('data-source');
+                        if (source) {
+                            new Clappr.Player({
+                                source: source,
+                                parentId: '#' + div.id,
+                                width: 320,
+                                height: 240,
+                                autoPlay: false,
+                                mediacontrol: { seekbar: "#d9534f", buttons: "#d9534f" }
+                            });
+                        }
+                    });
+                });
+        } else {
+            document.getElementById('movie-category-items').innerHTML = '';
+        }
+    }
+});
+</script>
 </body>
 </html>

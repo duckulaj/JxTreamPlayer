@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 
@@ -20,32 +21,36 @@ import com.hawkins.xtreamjson.data.LiveCategoryRepository;
 import com.hawkins.xtreamjson.data.LiveStream;
 import com.hawkins.xtreamjson.data.LiveStreamRepository;
 import com.hawkins.xtreamjson.data.MovieCategory;
+import com.hawkins.xtreamjson.data.MovieCategoryRepository;
 import com.hawkins.xtreamjson.data.MovieStream;
+import com.hawkins.xtreamjson.data.MovieStreamRepository;
 import com.hawkins.xtreamjson.data.Series;
 import com.hawkins.xtreamjson.data.SeriesCategory;
 import com.hawkins.xtreamjson.util.Constants;
 import com.hawkins.xtreamjson.util.XstreamCredentials;
 
+
 @Service
 public class JsonService {
     private final XstreamCredentials credentials;
-    private final LiveCategoryRepository liveCategoryRepository;
+    private final LiveCategoryRepository liveCategoryRepository;	
     private final LiveStreamRepository liveStreamRepository;
+    private final MovieCategoryRepository movieCategoryRepository;
+    private final MovieStreamRepository movieStreamRepository;
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final ExecutorService executor = Executors.newFixedThreadPool(4);
 
-    public JsonService(XstreamCredentials credentials, LiveCategoryRepository liveCategoryRepository, LiveStreamRepository liveStreamRepository) {
+    @Autowired
+    public JsonService(XstreamCredentials credentials, LiveCategoryRepository liveCategoryRepository, LiveStreamRepository liveStreamRepository, MovieCategoryRepository movieCategoryRepository, MovieStreamRepository movieStreamRepository) {
         this.credentials = credentials;
         this.liveCategoryRepository = liveCategoryRepository;
         this.liveStreamRepository = liveStreamRepository;
+        this.movieCategoryRepository = movieCategoryRepository;
+        this.movieStreamRepository = movieStreamRepository;
     }
 
     public void retreiveJsonData() {
-        // Example usage:
-        System.out.println("API URL: " + credentials.getApiUrl());
-        System.out.println("Username: " + credentials.getUsername());
-        System.out.println("Password: " + credentials.getPassword());
-
+        
         try {
             CompletableFuture<Void> liveCategoriesFuture = CompletableFuture.runAsync(() -> {
                 try {
@@ -106,6 +111,7 @@ public class JsonService {
 
             List<MovieCategory> movieCategories = readListFromFile("movie_categories.json", MovieCategory.class);
             System.out.println("Movie Categories: " + movieCategories.size());
+            movieCategoryRepository.saveAll(movieCategories);
 
             List<SeriesCategory> seriesCategories = readListFromFile("series_categories.json", SeriesCategory.class);
             System.out.println("Series Categories: " + seriesCategories.size());
@@ -116,6 +122,7 @@ public class JsonService {
 
             List<MovieStream> movieStreams = readListFromFile("movie_stream.json", MovieStream.class);
             System.out.println("Movie Streams: " + movieStreams.size());
+            movieStreamRepository.saveAll(movieStreams);
 
             List<Series> series = readListFromFile("series.json", Series.class);
             System.out.println("Series: " + series.size());
@@ -123,7 +130,6 @@ public class JsonService {
         } catch (MalformedURLException | URISyntaxException | InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }
-
         System.out.println("Finished");
     }
 
@@ -178,6 +184,14 @@ public class JsonService {
 
     public static <T, R extends JpaRepository<T, ?>> void persistList(R repository, List<T> entities) {
         repository.saveAll(entities);
+    }
+
+    public List<MovieCategory> getAllMovieCategories() {
+        return movieCategoryRepository.findAll();
+    }
+
+    public List<MovieStream> getMoviesByCategory(String categoryId) {
+        return movieStreamRepository.findByCategoryId(categoryId);
     }
 
 }

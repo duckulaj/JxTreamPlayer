@@ -1,13 +1,14 @@
 package com.hawkins.xtreamjson.data;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import lombok.Data;
-
-import java.util.List;
 
 @Data
 @Entity
