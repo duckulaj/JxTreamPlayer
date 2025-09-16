@@ -1,5 +1,7 @@
 package com.hawkins.xtreamjson.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -9,8 +11,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.hawkins.xtreamjson.data.LiveCategoryRepository;
 import com.hawkins.xtreamjson.data.LiveStreamRepository;
 import com.hawkins.xtreamjson.data.MovieCategoryRepository;
+import com.hawkins.xtreamjson.data.MovieStream;
 import com.hawkins.xtreamjson.data.MovieStreamRepository;
 import com.hawkins.xtreamjson.service.JsonService;
+import com.hawkins.xtreamjson.util.StreamUrlHelper;
+import com.hawkins.xtreamjson.util.XstreamCredentials;
 
 @Controller
 public class HomeController {
@@ -19,14 +24,16 @@ public class HomeController {
     private final LiveStreamRepository liveStreamRepository;
     private final MovieCategoryRepository movieCategoryRepository;
     private final MovieStreamRepository movieStreamRepository;
+    private final XstreamCredentials xstreamCredentials;
 
     @Autowired
-    public HomeController(JsonService jsonService, LiveCategoryRepository liveCategoryRepository, LiveStreamRepository liveStreamRepository, MovieCategoryRepository movieCategoryRepository, MovieStreamRepository movieStreamRepository) {
+    public HomeController(JsonService jsonService, LiveCategoryRepository liveCategoryRepository, LiveStreamRepository liveStreamRepository, MovieCategoryRepository movieCategoryRepository, MovieStreamRepository movieStreamRepository, XstreamCredentials xstreamCredentials) {
         this.jsonService = jsonService;
         this.liveCategoryRepository = liveCategoryRepository;
         this.liveStreamRepository = liveStreamRepository;
         this.movieCategoryRepository = movieCategoryRepository;
         this.movieStreamRepository = movieStreamRepository;
+        this.xstreamCredentials = xstreamCredentials;
     }
 
     @GetMapping("/")
@@ -66,7 +73,26 @@ public class HomeController {
 
     @GetMapping("/movieCategoryItems")
     public String movieCategoryItems(@RequestParam("categoryId") String categoryId, Model model) {
-        model.addAttribute("items", jsonService.getMoviesByCategory(categoryId));
+        List<MovieStream> movies = jsonService.getMoviesByCategory(categoryId);
+        for (var movie : movies) {
+            String url = StreamUrlHelper.buildVodUrl(
+                xstreamCredentials.getApiUrl(),
+                xstreamCredentials.getUsername(),
+                xstreamCredentials.getPassword(),
+                movie
+            );
+            movie.setDirectSource(url);
+        }
+        model.addAttribute("movies", movies);
+        model.addAttribute("API_URL", xstreamCredentials.getApiUrl());
+        model.addAttribute("USERNAME", xstreamCredentials.getUsername());
+        model.addAttribute("PASSWORD", xstreamCredentials.getPassword());
         return "fragments/movieCategoryItems :: items";
+    }
+
+    @GetMapping("/stream.html")
+    public String stream(@RequestParam(value = "url", required = false) String url, Model model) {
+        model.addAttribute("url", url);
+        return "stream";
     }
 }

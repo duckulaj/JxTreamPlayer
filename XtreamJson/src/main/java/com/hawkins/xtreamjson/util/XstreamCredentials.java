@@ -1,43 +1,27 @@
 package com.hawkins.xtreamjson.util;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Component
 public class XstreamCredentials {
-	
-	
+    
     private String apiUrl;
     private String username;
     private String password;
-    
-    private static XstreamCredentials thisInstance = null;
 
-    public XstreamCredentials() {
-    			// Load from application.properties or environment variables
-    	
-        this.apiUrl = System.getenv("XSTREAM_API_URL");
-        this.username = System.getenv("XSTREAM_USERNAME");
-        this.password = System.getenv("XSTREAM_PASSWORD");
-        
-    }
-    
-    public XstreamCredentials(String apiUrl, String username, String password) {
+    public XstreamCredentials(
+        @Value("${xtream.api-url}") String apiUrl,
+        @Value("${xtream.username}") String username,
+        @Value("${xtream.password}") String password
+    ) {
         this.apiUrl = apiUrl;
         this.username = username;
         this.password = password;
+        log.debug("XstreamCredentials loaded from application.properties");
     }
-    
-    public static synchronized XstreamCredentials getInstance()
-	{
-		log.debug("Requesting XstreamCredentials instance");
-
-		if (XstreamCredentials.thisInstance == null)
-		{
-			XstreamCredentials.thisInstance = new XstreamCredentials();
-		}
-
-		return XstreamCredentials.thisInstance;
-	}
     
     public String getApiUrl() {
         return apiUrl;
