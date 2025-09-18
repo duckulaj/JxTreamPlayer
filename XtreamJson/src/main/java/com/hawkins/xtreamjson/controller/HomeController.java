@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.hawkins.xtreamjson.data.LiveCategoryRepository;
+import com.hawkins.xtreamjson.data.LiveStream;
 import com.hawkins.xtreamjson.data.LiveStreamRepository;
 import com.hawkins.xtreamjson.data.MovieCategoryRepository;
 import com.hawkins.xtreamjson.data.MovieStream;
@@ -61,7 +62,17 @@ public class HomeController {
 
     @GetMapping("/liveCategoryItems")
     public String liveCategoryItems(@RequestParam("categoryId") String categoryId, Model model) {
-        model.addAttribute("items", liveStreamRepository.findByCategoryId(categoryId));
+        List<LiveStream> items = liveStreamRepository.findByCategoryId(categoryId);
+        for (var item : items) {
+            String url = com.hawkins.xtreamjson.util.StreamUrlHelper.buildLiveUrl(
+                xstreamCredentials.getApiUrl(),
+                xstreamCredentials.getUsername(),
+                xstreamCredentials.getPassword(),
+                item
+            );
+            item.setDirectSource(url);
+        }
+        model.addAttribute("items", items);
         return "fragments/liveCategoryItems :: items";
     }
 

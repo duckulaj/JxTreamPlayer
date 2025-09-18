@@ -44,4 +44,24 @@ public class MovieStream {
     private String customSid;
     @JsonProperty("direct_source")
     private String directSource;
+
+    // Lombok @Data should generate these, but add explicitly to resolve build issues
+    public int getStreamId() {
+        return streamId;
+    }
+    public void setStreamId(int streamId) {
+        this.streamId = streamId;
+    }
+    public String getContainerExtension() {
+        return containerExtension;
+    }
+    public void setContainerExtension(String containerExtension) {
+        this.containerExtension = containerExtension;
+    }
+    public String getDirectSource() {
+        return directSource;
+    }
+    public void setDirectSource(String directSource) {
+        this.directSource = directSource;
+    }
 }

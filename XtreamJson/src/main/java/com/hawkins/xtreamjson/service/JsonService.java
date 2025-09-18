@@ -33,7 +33,7 @@ import com.hawkins.xtreamjson.util.XstreamCredentials;
 @Service
 public class JsonService {
     private final XstreamCredentials credentials;
-    private final LiveCategoryRepository liveCategoryRepository;	
+    private final LiveCategoryRepository liveCategoryRepository;    
     private final LiveStreamRepository liveStreamRepository;
     private final MovieCategoryRepository movieCategoryRepository;
     private final MovieStreamRepository movieStreamRepository;
@@ -50,7 +50,6 @@ public class JsonService {
     }
 
     public void retreiveJsonData() {
-        
         try {
             CompletableFuture<Void> liveCategoriesFuture = CompletableFuture.runAsync(() -> {
                 try {

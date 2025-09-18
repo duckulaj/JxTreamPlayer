@@ -1,5 +1,6 @@
 package com.hawkins.xtreamjson.util;
 
+import com.hawkins.xtreamjson.data.LiveStream;
 import com.hawkins.xtreamjson.data.MovieStream;
 
 public class StreamUrlHelper {
@@ -19,6 +20,22 @@ public class StreamUrlHelper {
                 password,
                 stream.getStreamId(),
                 stream.getContainerExtension()
+        );
+    }
+
+    public static String buildLiveUrl(String apiUrl, String username, String password, LiveStream stream) {
+        if (apiUrl == null || apiUrl.isEmpty() ||
+            username == null || username.isEmpty() ||
+            password == null || password.isEmpty() ||
+            stream == null ||
+            stream.getStreamId() <= 0) { // Check for invalid streamId
+            return null;
+        }
+        return String.format("%s/live/%s/%s/%d.ts",
+                apiUrl,
+                username,
+                password,
+                stream.getStreamId()
         );
     }
 }

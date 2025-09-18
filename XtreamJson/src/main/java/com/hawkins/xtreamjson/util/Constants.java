@@ -6,6 +6,9 @@ public class Constants {
 	public static final String USERNAME = "5C2974";
 	public static final String PASSWORD = "6A7602";
 
+	// public static final String API_URL = "http://cf.tvuhd.site";  
+	// public static final String USERNAME = "6c501c0bea66";
+	// public static final String PASSWORD = "f72eb64ae0";
 
 	public static final String LIVE_CATEGORIES = API_URL + "/player_api.php?username=" + USERNAME + "&password=" + PASSWORD + "&action=get_live_categories";
 	public static final String MOVIE_CATEGORIES = API_URL + "/player_api.php?username=" + USERNAME + "&password=" + PASSWORD + "&action=get_vod_categories";
