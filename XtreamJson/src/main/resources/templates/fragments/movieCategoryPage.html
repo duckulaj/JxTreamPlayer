@@ -1,0 +1,92 @@
+<!--
+  Fragment: movieCategoryPage.html
+  Purpose: Paginated, filterable movie grid with A-Z sidebar and htmx integration
+  Usage: Returned by /movieCategoryPage endpoint
+-->
+
+<div th:fragment="page" class="movie-category-container container-fluid" id="movie-category-container">
+  <div class="row">
+    <!-- Movie Grid -->
+    <div class="col-11">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <!-- Page Size Selector -->
+        <div class="w-100 d-flex flex-column align-items-center">
+          <hr class="my-2">
+          <div style="width:50%; min-width:180px; max-width:320px;">
+            <label for="pageSize">Show </label>
+            <select id="pageSize" name="size" th:value="${pageSize}"
+                    class="form-select text-center"
+                    th:attr="hx-get=@{/movieCategoryPage(categoryId=${categoryId},page=0,size=''+this.value,letter=${selectedLetter})}, hx-target='#movie-category-container', hx-swap='innerHTML'">
+              <option th:value="10" th:selected="${pageSize} == 10">10</option>
+              <option th:value="20" th:selected="${pageSize} == 20">20</option>
+              <option th:value="50" th:selected="${pageSize} == 50">50</option>
+              <option th:value="100" th:selected="${pageSize} == 100">100</option>
+            </select>
+            items per page
+          </div>
+        </div>
+      </div>
+      <!-- Movie Thumbnails Grid -->
+      <div class="row">
+        <div class="col-2 mb-2" th:each="movie : ${moviePage.content}">
+          <a th:href="@{/stream.html(url=${movie.directSource})}" style="text-decoration:none;color:inherit;">
+            <div class="card h-100 clickable-movie-card">
+              <img th:if="${movie.streamIcon != null and !#strings.isEmpty(movie.streamIcon)}"
+                   th:src="${movie.streamIcon}"
+                   class="card-img-top" alt="Movie Thumbnail">
+              <div class="card-body">
+                <h6 class="card-title" th:text="${movie.name}"></h6>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+      <!-- No movies message -->
+      <div th:if="${moviePage.content.size()} == 0" class="alert alert-info">No movies found.</div>
+    </div>
+    <!-- A-Z Sidebar on the right -->
+    <div class="col-1 az-sidebar d-flex flex-column align-items-center justify-content-start">
+      <ul class="list-unstyled mt-2">
+        <li th:each="letter : ${letters}" th:classappend="${selectedLetter} == letter ? 'active' : ''">
+          <a href="#" th:text="${letter}"
+             th:attr="hx-get=@{/movieCategoryPage(categoryId=${categoryId},page=0,size=${pageSize},letter=${letter})}, hx-target='#movie-category-container', hx-swap='innerHTML'">A</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+  <!-- Pagination Controls at the very bottom, full width and centered -->
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-center mt-3 w-100">
+        <nav style="width:100%;">
+          <ul class="pagination justify-content-center mb-0 w-100">
+            <li class="page-item" th:classappend="${moviePage.first} ? 'disabled' : ''">
+              <a class="page-link" href="#"
+                 th:attr="hx-get=@{/movieCategoryPage(categoryId=${categoryId},page=${moviePage.number-1},size=${pageSize},letter=${selectedLetter})}, hx-target='#movie-category-container', hx-swap='innerHTML'">&laquo;</a>
+            </li>
+            <li class="page-item" th:each="i : ${#numbers.sequence(0, moviePage.totalPages-1)}"
+                th:classappend="${moviePage.number} == i ? 'active' : ''">
+              <a class="page-link" href="#" th:text="${i+1}"
+                 th:attr="hx-get=@{/movieCategoryPage(categoryId=${categoryId},page=${i},size=${pageSize},letter=${selectedLetter})}, hx-target='#movie-category-container', hx-swap='innerHTML'"></a>
+            </li>
+            <li class="page-item" th:classappend="${moviePage.last} ? 'disabled' : ''">
+              <a class="page-link" href="#"
+                 th:attr="hx-get=@{/movieCategoryPage(categoryId=${categoryId},page=${moviePage.number+1},size=${pageSize},letter=${selectedLetter})}, hx-target='#movie-category-container', hx-swap='innerHTML'">&raquo;</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .az-sidebar { border-left: 1px solid #eee; min-width: 40px; }
+  .az-sidebar ul { padding-left: 0; }
+  .az-sidebar li { margin: 2px 0; text-align: center; }
+  .az-sidebar li.active a { font-weight: bold; color: #007bff; }
+  .card-img-top { object-fit: cover; height: 200px; }
+  .movie-category-container { width: 100%; }
+  .clickable-movie-card { cursor: pointer; transition: box-shadow 0.2s; }
+  .clickable-movie-card:hover { box-shadow: 0 0 10px #007bff44; }
+</style>

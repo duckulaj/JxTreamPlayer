@@ -19,8 +19,7 @@ import org.slf4j.LoggerFactory;
 @Slf4j
 @Service
 public class TranscodingService {
-    private static final Logger log = LoggerFactory.getLogger(TranscodingService.class);
-    
+        
     private static class SessionInfo {
         Process process;
         File tempDir;

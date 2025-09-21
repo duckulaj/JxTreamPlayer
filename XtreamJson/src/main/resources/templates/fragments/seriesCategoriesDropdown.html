@@ -1,0 +1,43 @@
+<div th:fragment="dropdown">
+    <label for="series-category-select">Series Categories:</label>
+    <select id="series-category-select" class="form-select w-auto d-inline-block">
+        <option value="">-- Select Series Category --</option>
+        <option th:each="cat : ${categories}" th:value="${cat.categoryId}" th:text="${cat.categoryName}"></option>
+    </select>
+    <div id="series-list-container" class="mt-3">
+        <!-- Series will be loaded here -->
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const select = document.getElementById('series-category-select');
+        const seriesContainer = document.getElementById('series-list-container');
+        select.addEventListener('change', function() {
+            const categoryId = select.value;
+            if (!categoryId) {
+                seriesContainer.innerHTML = '';
+                return;
+            }
+            fetch(`/series/byCategory/${categoryId}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(seriesList => {
+                    if (!Array.isArray(seriesList) || seriesList.length === 0) {
+                        seriesContainer.innerHTML = '<div class="text-muted">No series found for this category.</div>';
+                        return;
+                    }
+                    let html = '<ul class="list-group">';
+                    for (const series of seriesList) {
+                        html += `<li class="list-group-item">${series.name || series.title || 'Untitled Series'}</li>`;
+                    }
+                    html += '</ul>';
+                    seriesContainer.innerHTML = html;
+                })
+                .catch(error => {
+                    seriesContainer.innerHTML = '<div class="text-danger">Failed to load series.</div>';
+                });
+        });
+    });
+</script>

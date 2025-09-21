@@ -3,6 +3,9 @@ package com.hawkins.xtreamjson.util;
 import com.hawkins.xtreamjson.data.LiveStream;
 import com.hawkins.xtreamjson.data.MovieStream;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class StreamUrlHelper {
     public static String buildVodUrl(String apiUrl, String username, String password, MovieStream stream) {
         if (apiUrl == null || apiUrl.isEmpty() ||

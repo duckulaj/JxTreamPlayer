@@ -1,12 +1,9 @@
 package com.hawkins.xtreamjson;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.client.RestTemplate;
-
-import com.hawkins.xtreamjson.util.XstreamCredentials;
 
 @SpringBootApplication
 public class XtreamJsonApplication {
@@ -17,14 +14,5 @@ public class XtreamJsonApplication {
     @Bean
     public RestTemplate restTemplate() {
         return new RestTemplate();
-    }
-
-    @Bean
-    public XstreamCredentials xstreamCredentials(
-        @Value("${xtream.api-url}") String apiUrl,
-        @Value("${xtream.username}") String username,
-        @Value("${xtream.password}") String password
-    ) {
-        return new XstreamCredentials(apiUrl, username, password);
     }
 }

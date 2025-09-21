@@ -1,27 +1,25 @@
 package com.hawkins.xtreamjson.util;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * POJO for holding Xtream Codes API credentials and base URL.
+ */
+@Slf4j
 public class XstreamCredentials {
-    private static final Logger log = LoggerFactory.getLogger(XstreamCredentials.class);
-    
+        
     private String apiUrl;
     private String username;
     private String password;
 
-    public XstreamCredentials(
-        @Value("${xtream.api-url}") String apiUrl,
-        @Value("${xtream.username}") String username,
-        @Value("${xtream.password}") String password
-    ) {
+    public XstreamCredentials(String apiUrl, String username, String password) {
         this.apiUrl = apiUrl;
         this.username = username;
         this.password = password;
-        log.debug("XstreamCredentials loaded from application.properties");
+        log.debug("XstreamCredentials loaded from database or runtime");
     }
     
     public String getApiUrl() {
@@ -46,5 +44,10 @@ public class XstreamCredentials {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    @Override
+    public String toString() {
+        return "XstreamCredentials{apiUrl='" + apiUrl + "', username='" + username + "', password='***'}";
     }
 }

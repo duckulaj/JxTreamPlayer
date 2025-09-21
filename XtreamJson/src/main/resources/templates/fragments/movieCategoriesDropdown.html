@@ -1,6 +1,9 @@
 <!-- Dropdown fragment for movie categories -->
 <div th:fragment="dropdown">
-    <select id="movieCategorySelect" name="movieCategorySelect" class="form-select">
+    <select id="movieCategorySelect" name="categoryId" class="form-select"
+            hx-get="/movieCategoryPage?page=0&size=20"
+            hx-target="#movie-category-container"
+            hx-swap="innerHTML">
         <option value="">Select a Movie Category</option>
         <th:block th:each="category : ${categories}">
             <option th:value="${category.categoryId}" th:text="${category.categoryName}"></option>

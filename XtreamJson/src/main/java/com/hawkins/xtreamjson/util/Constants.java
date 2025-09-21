@@ -1,22 +1,17 @@
 package com.hawkins.xtreamjson.util;
 
+/**
+ * Holds endpoint templates for Xtream Codes API. All templates require credentials and base URL to be provided at runtime.
+ */
 public class Constants {
-
-	public static final String API_URL = "http://line.smart-ultra.cc";  
-	public static final String USERNAME = "5C2974";
-	public static final String PASSWORD = "6A7602";
-
-	// public static final String API_URL = "http://cf.tvuhd.site";  
-	// public static final String USERNAME = "6c501c0bea66";
-	// public static final String PASSWORD = "f72eb64ae0";
-
-	public static final String LIVE_CATEGORIES = API_URL + "/player_api.php?username=" + USERNAME + "&password=" + PASSWORD + "&action=get_live_categories";
-	public static final String MOVIE_CATEGORIES = API_URL + "/player_api.php?username=" + USERNAME + "&password=" + PASSWORD + "&action=get_vod_categories";
-	public static final String SERIES_CATEGORIES = API_URL + "/player_api.php?username=" + USERNAME + "&password=" + PASSWORD + "&action=get_series_categories";
-	public static final String LIVE_STREAMS = API_URL + "/player_api.php?username=" + USERNAME + "&password=" + PASSWORD + "&action=get_live_streams";
-	public static final String MOVIE_STREAMS = API_URL + "/player_api.php?username=" + USERNAME + "&password=" + PASSWORD + "&action=get_vod_streams";
-	public static final String SERIES = API_URL + "/player_api.php?username=" + USERNAME + "&password=" + PASSWORD + "&action=get_series";
-	public static final String SERIES_BY_CATEGORY = API_URL + "/player_api.php?username=" + USERNAME + "&password=" + PASSWORD + "&action=get_series&category_id=138";
-	public static final String SERIES_INFO = API_URL + "/player_api.php?username=" + USERNAME + "&password=" + PASSWORD + "&action=get_series_info&series_id=2374";
-
+    public static final String LIVE_CATEGORIES = "%s/player_api.php?username=%s&password=%s&action=get_live_categories";
+    public static final String MOVIE_CATEGORIES = "%s/player_api.php?username=%s&password=%s&action=get_vod_categories";
+    public static final String SERIES_CATEGORIES = "%s/player_api.php?username=%s&password=%s&action=get_series_categories";
+    public static final String LIVE_STREAMS = "%s/player_api.php?username=%s&password=%s&action=get_live_streams";
+    public static final String MOVIE_STREAMS = "%s/player_api.php?username=%s&password=%s&action=get_vod_streams";
+    public static final String SERIES = "%s/player_api.php?username=%s&password=%s&action=get_series";
+    public static final String SERIES_BY_CATEGORY = "%s/player_api.php?username=%s&password=%s&action=get_series&category_id=%s";
+    public static final String SERIES_INFO = "%s/player_api.php?username=%s&password=%s&action=get_series_info&series_id=%s";
+    public static final String SHOW_INFO = "%s/player_api.php?username=%s&password=%s&action=get_show&series_id=%s";
+    public static final String EPISODES_BY_SEASON = "%s/player_api.php?username=%s&password=%s&action=get_episodes&season_id=%s";
 }
