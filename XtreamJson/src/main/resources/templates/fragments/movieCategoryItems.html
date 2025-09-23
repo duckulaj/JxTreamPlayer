@@ -1,5 +1,5 @@
 <!-- Fragment for displaying movie items as hyperlinks -->
-<div th:fragment="items(movies, apiUrl, username, password)">
+<div th:fragment="movie-category-items(movies, apiUrl, username, password)">
     <ul class="list-group">
         <th:block th:each="movie : ${movies}">
             <li class="list-group-item">

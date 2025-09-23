@@ -1,0 +1,24 @@
+<th:block th:fragment="episodes-list">
+    <div th:if="${episodes == null or #lists.isEmpty(episodes)}" class="alert alert-warning mt-2">No episodes found for this season.</div>
+    <div class="d-flex flex-wrap justify-content-start" th:if="${!#lists.isEmpty(episodes)}" style="gap: 0.5rem;">
+        <div th:each="episode : ${episodes}"
+             style="width: calc(75px + 2vw); min-width: 75px; max-width: 120px;">
+            <div class="card h-100 text-center" style="font-size: 0.85rem; border-radius: 0.5rem; border: 2px solid #007bff; background: #e3f2fd;">
+                <a th:href="@{/stream.html(url=${episode.directSource})}"
+                   hx-target="#main-content"
+                   hx-swap="innerHTML"
+                >
+                    <img th:src="@{${seriesImage != null ? seriesImage : '/images/placeholder.png'}}" class="card-img-top img-fluid" alt="Episode Image" style="width: 75px; height: 75px; object-fit: contain; background: #f8f9fa; margin: 0 auto;"/>
+                </a>
+                <div class="card-body p-1">
+                    <a th:href="@{/stream.html(url=${episode.directSource})}"
+                       hx-target="#main-content"
+                       hx-swap="innerHTML"
+                       class="stretched-link text-decoration-none text-dark">
+                        <div th:text="${episode.name}" style="font-size: 0.85em; word-break: break-word;"></div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>

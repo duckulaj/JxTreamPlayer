@@ -1,20 +1,16 @@
 package com.hawkins.xtreamjson.service;
 
-import org.springframework.stereotype.Service;
-
-import lombok.extern.slf4j.Slf4j;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service

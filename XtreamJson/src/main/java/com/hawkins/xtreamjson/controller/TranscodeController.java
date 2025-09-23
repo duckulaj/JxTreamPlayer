@@ -1,17 +1,17 @@
 package com.hawkins.xtreamjson.controller;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.UUID;
+
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.UUID;
 
 @RestController
 public class TranscodeController {
@@ -21,9 +21,6 @@ public class TranscodeController {
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Accept-Ranges", "bytes");
         Process process = null;
-        // Generate a unique error log file name per request
-        String errorLogFileName = "ffmpeg-errors-" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")) + "-" + UUID.randomUUID() + ".log";
-        File errorLogFile = new File(errorLogFileName);
         try {
             // Try hardware NVENC first, fallback to libx264 if it fails
             String[] nvencCmd = {
@@ -41,7 +38,7 @@ public class TranscodeController {
                 "-movflags", "+frag_keyframe+empty_moov+default_base_moof",
                 "-"
             };
-            ProcessBuilder pb = new ProcessBuilder(nvencCmd).redirectError(errorLogFile);
+            ProcessBuilder pb = new ProcessBuilder(nvencCmd); // No error file redirection
             process = pb.start();
             boolean usedNvenc = true;
             try (InputStream in = process.getInputStream(); OutputStream out = response.getOutputStream()) {
@@ -72,7 +69,7 @@ public class TranscodeController {
                     "-tune", "zerolatency",
                     "-"
                 };
-                pb = new ProcessBuilder(x264Cmd).redirectError(errorLogFile);
+                pb = new ProcessBuilder(x264Cmd); // No error file redirection
                 process = pb.start();
                 try (InputStream in = process.getInputStream(); OutputStream out = response.getOutputStream()) {
                     byte[] buffer = new byte[8192];

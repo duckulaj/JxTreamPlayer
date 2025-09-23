@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Transient;
 import lombok.Data;
 
 @Data
@@ -53,4 +54,6 @@ public class Series {
     private String categoryId;
     @JsonProperty("category_ids")
     private List<Integer> categoryIds;
+    @Transient
+    private List<Season> seasons;
 }

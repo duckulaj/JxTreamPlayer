@@ -1,7 +1,14 @@
 package com.hawkins.xtreamjson.data;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Data
@@ -20,4 +27,6 @@ public class Episode {
     private String episodeNum;
     @Lob
     private String infoJson;
+    private String directSource;
+    private int durationSeconds;
 }

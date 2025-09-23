@@ -1,6 +1,7 @@
 <!-- Dropdown fragment for movie categories -->
-<div th:fragment="dropdown">
-    <select id="movieCategorySelect" name="categoryId" class="form-select"
+<div th:fragment="movie-category-dropdown">
+	<label for="series-category-select">Select Movie Category:</label>
+    <select id="movieCategorySelect" name="categoryId" class="form-select w-auto d-inline-block"
             hx-get="/movieCategoryPage?page=0&size=20"
             hx-target="#movie-category-container"
             hx-swap="innerHTML">

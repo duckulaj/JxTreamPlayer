@@ -41,4 +41,25 @@ public class StreamUrlHelper {
                 stream.getStreamId()
         );
     }
+
+    public static String buildEpisodeUrl(String apiUrl, String username, String password, String seriesId, String seasonId, String episodeId, String container) {
+        if (apiUrl == null || apiUrl.isEmpty() ||
+            username == null || username.isEmpty() ||
+            password == null || password.isEmpty() ||
+            seriesId == null || seriesId.isEmpty() ||
+            seasonId == null || seasonId.isEmpty() ||
+            episodeId == null || episodeId.isEmpty() ||
+            container == null || container.isEmpty()) {
+            return null;
+        }
+        return String.format("%s/series/%s/%s/%s/%s/%s.%s",
+                apiUrl,
+                username,
+                password,
+                seriesId,
+                seasonId,
+                episodeId,
+                container
+        );
+    }
 }

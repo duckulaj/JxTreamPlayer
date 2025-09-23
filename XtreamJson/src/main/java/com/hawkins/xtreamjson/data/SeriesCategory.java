@@ -1,9 +1,12 @@
 package com.hawkins.xtreamjson.data;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Transient;
 import lombok.Data;
 
 @Data
@@ -16,6 +19,9 @@ public class SeriesCategory {
     private String categoryName;
     @JsonProperty("parent_id")
     private int parentId;
+
+    @Transient
+    private List<Series> seriesList;
 
     public SeriesCategory() {}
 

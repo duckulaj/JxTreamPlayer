@@ -1,11 +1,13 @@
 package com.hawkins.xtreamjson.config;
 
-import com.hawkins.xtreamjson.service.IptvProviderService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
+
+import com.hawkins.xtreamjson.service.IptvProviderService;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class ProviderSetupInterceptor implements HandlerInterceptor {

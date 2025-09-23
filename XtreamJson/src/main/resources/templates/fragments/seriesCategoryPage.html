@@ -1,0 +1,67 @@
+<!--
+  Fragment: seriesCategoryPage.html
+  Purpose: Paginated, filterable series grid with A-Z sidebar and htmx integration
+  Usage: Returned by /seriesCategoryPage endpoint
+-->
+
+<div th:fragment="series-category-page" class="series-category-container container-fluid" id="series-category-container">
+  <div class="row">
+    <!-- Main Content Area -->
+    <div class="col-11">
+      <div id="main-content">
+        <!-- Series Grid Layout -->
+        <div class="d-flex flex-wrap justify-content-start" style="gap: 0.5rem;">
+          <div th:each="serie : ${seriesPage.content}"
+               style="width: calc(75px + 2vw); min-width: 75px; max-width: 120px;">
+            <div class="card h-100 text-center" style="font-size: 0.85rem; border-radius: 0.5rem; border: 2px solid #007bff; background: #e3f2fd;">
+              <a th:href="@{/seasonsBySeries(seriesId=${serie.seriesId})}"
+                 th:attr="hx-get=@{'/seasonsBySeries'(seriesId=${serie.seriesId},seriesImage=${#strings.contains(serie.cover, 'null') ? '/images/placeholder.png' : serie.cover})}"
+                 hx-target="#main-content"
+                 hx-swap="innerHTML">
+                <img th:src="@{${#strings.contains(serie.cover, 'null') ? '/images/placeholder.png' : serie.cover}}" class="card-img-top img-fluid" alt="Series Cover" style="width: 75px; height: 75px; object-fit: contain; background: #f8f9fa; margin: 0 auto;"/>
+              </a>
+              <div class="card-body p-1">
+                <a th:href="@{/seasonsBySeries(seriesId=${serie.seriesId})}"
+                   th:attr="hx-get=@{'/seasonsBySeries'(seriesId=${serie.seriesId},seriesImage=${#strings.contains(serie.cover, 'null') ? '/images/placeholder.png' : serie.cover})}"
+                   hx-target="#main-content"
+                   hx-swap="innerHTML"
+                   class="stretched-link text-decoration-none text-dark">
+                  <div th:text="${serie.name}" style="font-size: 0.85em; word-break: break-word;"></div>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- No series message -->
+        <div th:if="${seriesPage.content.size()} == 0" class="alert alert-info">No series found.</div>
+        <!-- Paging Controls -->
+        <div class="d-flex justify-content-center mt-3">
+          <nav th:if="${seriesPage.totalPages} > 1">
+            <ul class="pagination">
+              <li class="page-item" th:classappend="${seriesPage.first} ? 'disabled'">
+                <a class="page-link" href="#" th:attr="hx-get=@{/seriesCategoryPage(categoryId=${categoryId},page=${seriesPage.number - 1},size=${pageSize},letter=${selectedLetter})},hx-target='#series-category-container',hx-swap='innerHTML'">Previous</a>
+              </li>
+              <li class="page-item" th:each="i : ${#numbers.sequence(0, seriesPage.totalPages - 1)}"
+                  th:classappend="${seriesPage.number} == i ? 'active'">
+                <a class="page-link" href="#" th:text="${i + 1}"
+                   th:attr="hx-get=@{/seriesCategoryPage(categoryId=${categoryId},page=${i},size=${pageSize},letter=${selectedLetter})},hx-target='#series-category-container',hx-swap='innerHTML'"></a>
+              </li>
+              <li class="page-item" th:classappend="${seriesPage.last} ? 'disabled'">
+                <a class="page-link" href="#" th:attr="hx-get=@{/seriesCategoryPage(categoryId=${categoryId},page=${seriesPage.number + 1},size=${pageSize},letter=${selectedLetter})},hx-target='#series-category-container',hx-swap='innerHTML'">Next</a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+    <!-- A-Z Sidebar on the right -->
+    <div class="col-1 az-sidebar d-flex flex-column align-items-center justify-content-start">
+      <ul class="list-unstyled mt-2">
+        <li th:each="letter : ${letters}" th:classappend="${selectedLetter} == letter ? 'active' : ''">
+          <a href="#" th:text="${letter}"
+             th:attr="hx-get=@{/seriesCategoryPage(categoryId=${categoryId},page=0,size=${pageSize},letter=${letter})},hx-target='#series-category-container',hx-swap='innerHTML'"></a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

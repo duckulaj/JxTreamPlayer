@@ -1,0 +1,19 @@
+<th:block th:fragment="seasons-list">
+    <div th:if="${seasons == null or #lists.isEmpty(seasons)}" class="alert alert-warning mt-2">No seasons found for this series.</div>
+    <th:block th:with="hasSeriesImage=${seriesImage != null and !#strings.isEmpty(seriesImage)}">
+        <div class="d-flex flex-wrap justify-content-start" th:if="${!#lists.isEmpty(seasons)}" style="gap: 0.5rem;">
+            <div th:each="season : ${seasons}"
+                 style="width: calc(75px + 2vw); min-width: 75px; max-width: 120px;">
+                <div class="card h-100 text-center" style="font-size: 0.85rem; border-radius: 0.5rem; border: 2px solid #007bff; background: #e3f2fd;">
+                    <a href="#"
+                       th:attr="hx-get=@{'/episodesBySeason'(seriesId=${season.seriesId},seasonId=${season.seasonId})}"
+                       hx-target="#main-content"
+                       hx-swap="innerHTML"
+                       style="text-decoration: none; color: #007bff; font-weight: bold;">
+                        <span th:text="${season.name != null ? season.name : 'Season ' + season.seasonId}"></span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </th:block>
+</th:block>

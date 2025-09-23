@@ -1,22 +1,38 @@
 package com.hawkins.xtreamjson.service;
 
-import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.hawkins.xtreamjson.annotations.TrackExecutionTime;
+import com.hawkins.xtreamjson.data.ApplicationProperties;
 import com.hawkins.xtreamjson.data.Episode;
 import com.hawkins.xtreamjson.data.LiveCategory;
 import com.hawkins.xtreamjson.data.LiveStream;
@@ -25,7 +41,6 @@ import com.hawkins.xtreamjson.data.MovieStream;
 import com.hawkins.xtreamjson.data.Season;
 import com.hawkins.xtreamjson.data.Series;
 import com.hawkins.xtreamjson.data.SeriesCategory;
-import com.hawkins.xtreamjson.data.SeriesInformationToSave;
 import com.hawkins.xtreamjson.repository.EpisodeRepository;
 import com.hawkins.xtreamjson.repository.LiveCategoryRepository;
 import com.hawkins.xtreamjson.repository.LiveStreamRepository;
@@ -52,11 +67,24 @@ public class JsonService {
 	private final SeriesRepository seriesRepository;
 	private final SeasonRepository seasonRepository;
 	private final EpisodeRepository episodeRepository;
-	private static final ObjectMapper objectMapper = new ObjectMapper();
-	private static final ExecutorService executor = Executors.newFixedThreadPool(4);
+	private final ApplicationPropertiesService applicationPropertiesService;
 
-	@Autowired
-	public JsonService(IptvProviderService providerService, LiveCategoryRepository liveCategoryRepository, LiveStreamRepository liveStreamRepository, MovieCategoryRepository movieCategoryRepository, MovieStreamRepository movieStreamRepository, SeriesCategoryRepository seriesCategoryRepository, SeriesRepository seriesRepository, SeasonRepository seasonRepository, EpisodeRepository episodeRepository) {
+	private static final int DEFAULT_THREAD_POOL_SIZE = 16;
+	private static final ExecutorService executor = Executors.newFixedThreadPool(
+	    Integer.parseInt(System.getenv().getOrDefault("XTREAM_THREAD_POOL_SIZE", String.valueOf(DEFAULT_THREAD_POOL_SIZE)))
+	);
+
+	
+	public JsonService(IptvProviderService providerService,
+					   LiveCategoryRepository liveCategoryRepository,
+					   LiveStreamRepository liveStreamRepository,
+					   MovieCategoryRepository movieCategoryRepository,
+					   MovieStreamRepository movieStreamRepository,
+					   SeriesCategoryRepository seriesCategoryRepository,
+					   SeriesRepository seriesRepository,
+					   SeasonRepository seasonRepository,
+					   EpisodeRepository episodeRepository,
+					   ApplicationPropertiesService applicationPropertiesService) {
 		this.providerService = providerService;
 		this.liveCategoryRepository = liveCategoryRepository;
 		this.liveStreamRepository = liveStreamRepository;
@@ -66,298 +94,390 @@ public class JsonService {
 		this.seriesRepository = seriesRepository;
 		this.seasonRepository = seasonRepository;
 		this.episodeRepository = episodeRepository;
+		this.applicationPropertiesService = applicationPropertiesService;
 	}
 
+	// --- Performance/robustness parameters ---
+	private static final Duration BASE_BACKOFF = Duration.ofMillis(250);
+	private static final ThreadLocalRandom RAND = ThreadLocalRandom.current();
+
+	private static final ObjectMapper objectMapper = new ObjectMapper();
+
+	// Reuse readers to cut Jackson overhead
+	private final ObjectReader liveCategoryReader   = objectMapper.readerFor(new TypeReference<List<LiveCategory>>() {});
+	private final ObjectReader liveStreamReader     = objectMapper.readerFor(new TypeReference<List<LiveStream>>() {});
+	private final ObjectReader movieCategoryReader  = objectMapper.readerFor(new TypeReference<List<MovieCategory>>() {});
+	private final ObjectReader movieStreamReader    = objectMapper.readerFor(new TypeReference<List<MovieStream>>() {});
+	private final ObjectReader seriesCategoryReader = objectMapper.readerFor(new TypeReference<List<SeriesCategory>>() {});
+	private final ObjectReader seriesListReader     = objectMapper.readerFor(new TypeReference<List<Series>>() {});
+
+	// Remember permanently-missing series (optional: persist to DB)
+	private final java.util.Set<String> knownMissingSeries = ConcurrentHashMap.newKeySet();
+
+	// Status-aware HTTP result
+	static final class HttpResult {
+		final int status;
+		final String body;
+		HttpResult(int status, String body) { this.status = status; this.body = body; }
+		boolean is2xx() { return status >= 200 && status < 300; }
+	}
+
+	@TrackExecutionTime
 	public void retreiveJsonData() {
-		try {
-			// Define base directories
+	    try {
+	        var providerOpt = providerService.getSelectedProvider();
+	        if (providerOpt.isEmpty()) {
+	            log.error("No provider selected. Aborting data retrieval.");
+	            return;
+	        }
+	        var p = providerOpt.get();
+	        var creds = new XstreamCredentials(p.getApiUrl(), p.getUsername(), p.getPassword());
 
-			/* String baseDir = "XStreamJsonFiles";
-            String moviesDir = baseDir + "/Movies";
-            String liveDir = baseDir + "/Live";
-            String seriesDir = baseDir + "/Series";
-            // Ensure base directories exist
-            File base = new File(baseDir);
-            if (!base.exists()) base.mkdirs();
-            File movies = new File(moviesDir);
-            if (!movies.exists()) movies.mkdirs();
-            File live = new File(liveDir);
-            if (!live.exists()) live.mkdirs();
-            File series = new File(seriesDir);
-            if (!series.exists()) series.mkdirs();
-			 */
+	        // Precompute base URLs
+	        final String liveCatsUrl    = XtreamCodesUtils.buildEndpointUrl(Constants.LIVE_CATEGORIES, creds);
+	        final String liveStreamsUrl = XtreamCodesUtils.buildEndpointUrl(Constants.LIVE_STREAMS, creds);
+	        final String movieCatsUrl   = XtreamCodesUtils.buildEndpointUrl(Constants.MOVIE_CATEGORIES, creds);
+	        final String movieStreamsUrl= XtreamCodesUtils.buildEndpointUrl(Constants.MOVIE_STREAMS, creds);
+	        final String seriesCatsUrl  = XtreamCodesUtils.buildEndpointUrl(Constants.SERIES_CATEGORIES, creds);
 
-			// Get credentials once
-			var providerOpt = providerService.getSelectedProvider();
-			if (providerOpt.isEmpty()) {
-				log.error("No provider selected. Aborting data retrieval.");
-				return;
-			}
-			XstreamCredentials credentials = new XstreamCredentials(providerOpt.get().getApiUrl(), providerOpt.get().getUsername(), providerOpt.get().getPassword());
+	        // Fetch runtime-configurable maxRetries
+	        final int maxRetries = applicationPropertiesService.getCurrentProperties().getMaxRetries();
 
-			CompletableFuture<Void> liveCategoriesFuture = CompletableFuture.runAsync(() -> {
-				try {
-					String urlStr = XtreamCodesUtils.buildEndpointUrl(Constants.LIVE_CATEGORIES, credentials);
-					URL url = new URI(urlStr).toURL();
-					String liveCategoriesJson = httpGetToString(url, credentials);
-					urlStr = XtreamCodesUtils.buildEndpointUrl(Constants.LIVE_STREAMS, credentials);
-					url = new URI(urlStr).toURL();
-					String liveStreamsJson = httpGetToString(url, credentials);
-					if (liveCategoriesJson != null) {
-						List<LiveCategory> liveCategories = objectMapper.readValue(liveCategoriesJson, objectMapper.getTypeFactory().constructCollectionType(List.class, LiveCategory.class));
-						log.info("Live Categories: " + liveCategories.size());
-						liveCategoryRepository.saveAll(liveCategories);
-					}
-					if (liveStreamsJson != null) {
-						List<LiveStream> liveStreams = objectMapper.readValue(liveStreamsJson, objectMapper.getTypeFactory().constructCollectionType(List.class, LiveStream.class));
-						log.info("Live Streams: " + liveStreams.size());
-						liveStreamRepository.saveAll(liveStreams);
-					}
-				} catch (Exception e) { e.printStackTrace(); }
-			}, executor);
+	        // Before we do anything else we need to clear the database of all existing data
+	        
+	        episodeRepository.deleteAllInBatch();
+	        seasonRepository.deleteAllInBatch();
+	        seriesRepository.deleteAllInBatch();
+	        seriesCategoryRepository.deleteAllInBatch();
+	        
+	        liveStreamRepository.deleteAllInBatch();
+	        liveCategoryRepository.deleteAllInBatch();
+	        
+	        movieStreamRepository.deleteAllInBatch();	        
+	        movieCategoryRepository.deleteAllInBatch();
+	        
+	        knownMissingSeries.clear();
+	        log.info("Cleared existing data");
+	        
+	        CompletableFuture<Void> liveTask = CompletableFuture.runAsync(() -> {
+	            try {
+	                HttpResult cats    = getWithRetry(liveCatsUrl, creds, maxRetries);
+	                HttpResult streams = getWithRetry(liveStreamsUrl, creds, maxRetries);
+	                if (cats.is2xx() && cats.body != null) {
+	                    List<LiveCategory> list = liveCategoryReader.readValue(cats.body);
+	                    liveCategoryRepository.saveAll(list);
+	                    log.info("Live Categories: {}", list.size());
+	                }
+	                if (streams.is2xx() && streams.body != null) {
+	                    List<LiveStream> list = liveStreamReader.readValue(streams.body);
+	                    liveStreamRepository.saveAll(list);
+	                    log.info("Live Streams: {}", list.size());
+	                }
+	            } catch (Exception e) { log.warn("Live fetch failed", e); }
+	        }, executor);
 
-			CompletableFuture<Void> movieCategoriesFuture = CompletableFuture.runAsync(() -> {
-				try {
-					String urlStr = XtreamCodesUtils.buildEndpointUrl(Constants.MOVIE_CATEGORIES, credentials);
-					URL url = new URI(urlStr).toURL();
-					String movieCategoriesJson = httpGetToString(url, credentials);
-					urlStr = XtreamCodesUtils.buildEndpointUrl(Constants.MOVIE_STREAMS, credentials);
-					url = new URI(urlStr).toURL();
-					String movieStreamsJson = httpGetToString(url, credentials);
-					if (movieCategoriesJson != null) {
-						List<MovieCategory> movieCategories = objectMapper.readValue(movieCategoriesJson, objectMapper.getTypeFactory().constructCollectionType(List.class, MovieCategory.class));
-						log.info("Movie Categories: " + movieCategories.size());
-						movieCategoryRepository.saveAll(movieCategories);
-					}
-					if (movieStreamsJson != null) {
-						List<MovieStream> movieStreams = objectMapper.readValue(movieStreamsJson, objectMapper.getTypeFactory().constructCollectionType(List.class, MovieStream.class));
-						log.info("Movie Streams: " + movieStreams.size());
-						movieStreamRepository.saveAll(movieStreams);
-					}
-				} catch (Exception e) { e.printStackTrace(); }
-			}, executor);
+	        CompletableFuture<Void> movieTask = CompletableFuture.runAsync(() -> {
+	            try {
+	                HttpResult cats    = getWithRetry(movieCatsUrl, creds, maxRetries);
+	                HttpResult streams = getWithRetry(movieStreamsUrl, creds, maxRetries);
+	                if (cats.is2xx() && cats.body != null) {
+	                    List<MovieCategory> list = movieCategoryReader.readValue(cats.body);
+	                    movieCategoryRepository.saveAll(list);
+	                    log.info("Movie Categories: {}", list.size());
+	                }
+	                if (streams.is2xx() && streams.body != null) {
+	                    List<MovieStream> list = movieStreamReader.readValue(streams.body);
+	                    movieStreamRepository.saveAll(list);
+	                    log.info("Movie Streams: {}", list.size());
+	                }
+	            } catch (Exception e) { log.warn("Movie fetch failed", e); }
+	        }, executor);
 
-			CompletableFuture<Void> seriesCategoriesFuture = CompletableFuture.runAsync(() -> {
-				try {
-					List<SeriesCategory> categoriesToSave = new java.util.ArrayList<SeriesCategory>();
-					List<Series> seriesToSave = new java.util.ArrayList<Series>();
-					List<Season> seasonsToSave = new java.util.ArrayList<Season>();
-					List<Episode> episodesToSave = new java.util.ArrayList<Episode>();
-					SeriesInformationToSave seriesInformationToSave = new SeriesInformationToSave();
+	        CompletableFuture<Void> seriesTask = CompletableFuture.runAsync(() -> fetchAndSaveSeries(creds, seriesCatsUrl), executor);
 
-					String urlStr = XtreamCodesUtils.buildEndpointUrl(Constants.SERIES_CATEGORIES, credentials);
-					URL url = new URI(urlStr).toURL();
-					String seriesCategoriesJson = httpGetToString(url, credentials);
-					urlStr = XtreamCodesUtils.buildEndpointUrl(Constants.SERIES, credentials);
-					url = new URI(urlStr).toURL();
-					String seriesJson = httpGetToString(url, credentials);
-					if (seriesCategoriesJson != null) {
-						List<SeriesCategory> seriesCategories = objectMapper.readValue(seriesCategoriesJson, objectMapper.getTypeFactory().constructCollectionType(List.class, SeriesCategory.class));
-						log.info("Series Categories: " + seriesCategories.size());
-						// seriesCategoryRepository.saveAll(seriesCategories);
-						seriesInformationToSave.setCategories(seriesCategories);
-
-						List<CompletableFuture<Void>> seriesTasks = new java.util.ArrayList<>();
-
-						for (SeriesCategory sc : seriesCategories) {
-							categoriesToSave.add(sc);
-							String catId = String.valueOf(sc.getCategoryId());
-							if (catId == null || catId.trim().isEmpty() || catId.contains("%")) {
-								log.error("Skipping Series Category with invalid ID: '" + catId + "' (" + sc.getCategoryName() + ")");
-								continue;
-							}
-
-							log.info("Series Category: " + sc.getCategoryName() + " (ID: " + catId + ")");
-							String formattedUrl = XtreamCodesUtils.buildEndpointUrl(Constants.SERIES_BY_CATEGORY, credentials, catId);
-							URL categoryIdurl = new URI(formattedUrl).toURL();
-							String seriesByCategoryJson = httpGetToString(categoryIdurl, credentials);
-							if (seriesByCategoryJson != null) {
-								List<Series> seriesByCategory = objectMapper.readValue(seriesByCategoryJson, objectMapper.getTypeFactory().constructCollectionType(List.class, Series.class));
-								log.info("  Series in Category: " + seriesByCategory.size());
-								// seriesRepository.saveAll(seriesByCategory);
-
-								for (Series s : seriesByCategory) {
-									seriesToSave.add(s);
-									String seriesId = String.valueOf(s.getSeriesId());
-									if (seriesId != null && !seriesId.trim().isEmpty()) {
-
-										// Parallelize fetching seasons and episodes
-										seriesTasks.add(CompletableFuture.runAsync(() -> {
-											try {
-												String seriesInfoUrl = XtreamCodesUtils.buildEndpointUrl(Constants.SERIES_INFO, credentials, seriesId);
-												URL seriesInfoURL = new URI(seriesInfoUrl).toURL();
-												String seriesInfoJson = httpGetToString(seriesInfoURL, credentials);
-												if (seriesInfoJson == null) {
-													log.error("Failed to fetch series info for seriesId: " + seriesId);
-													return;
-												}
-												// Parse the seasons and episodes in-memory
-												try {
-													com.fasterxml.jackson.databind.JsonNode root = objectMapper.readTree(seriesInfoJson);
-													if (root.has("episodes") && root.get("episodes").isObject()) {
-														com.fasterxml.jackson.databind.JsonNode episodesNode = root.get("episodes");
-														java.util.Iterator<String> seasonFields = episodesNode.fieldNames();
-														log.info("Series: " + s.getName() + " (ID: " + seriesId + ")");
-														while (seasonFields.hasNext()) {
-															String seasonNum = XtreamCodesUtils.sanitizeName(seasonFields.next());
-															
-															com.fasterxml.jackson.databind.JsonNode episodesArray = episodesNode.get(seasonNum);
-															if (episodesArray != null && episodesArray.isArray()) {
-																// Persist Season entity
-																Season seasonEntity = Season.builder()
-																		.seasonId(seasonNum)
-																		.seriesId(seriesId)
-																		.name("Season " + seasonNum)
-																		.build();
-																seasonsToSave.add(seasonEntity);
-
-																for (com.fasterxml.jackson.databind.JsonNode episodeNode : episodesArray) {
-
-																	String episodeNum = episodeNode.has("episode_num") ? XtreamCodesUtils.sanitizeName(episodeNode.get("episode_num").asText()) : "unknown";
-																	// log.info("      Episode: " + episodeNum);
-																	// Persist Episode entity
-																	Episode episodeEntity = Episode.builder()
-																			.episodeId(episodeNode.has("id") ? episodeNode.get("id").asText() : null)
-																			.seriesId(seriesId)
-																			.seasonId(seasonNum)
-																			.name(episodeNode.has("title") ? episodeNode.get("title").asText() : null)
-																			.episodeNum(episodeNum)
-																			.infoJson(episodeNode.toString())
-																			.build();
-																	episodesToSave.add(episodeEntity);
-
-																}
-
-															}
-														}
-													}
-												} catch (Exception e) {
-													System.err.println("Error parsing seasons/episodes for seriesId: " + seriesId);
-													e.printStackTrace();
-												}
-											} catch (Exception e) {
-												System.err.println("Error fetching seasons for seriesId: " + seriesId);
-												e.printStackTrace();
-											}
-										}, executor));
-									}
-								}
-							}
-						}
-						// Wait for all series/seasons/episodes fetches to complete
-						CompletableFuture.allOf(seriesTasks.toArray(new CompletableFuture[0])).join();
-						// Finally persist all at once
-						if (!categoriesToSave.isEmpty()) {
-							seriesInformationToSave.setCategories(categoriesToSave);
-						}
-						if (!seriesToSave.isEmpty()) {
-							seriesInformationToSave.setSeries(seriesToSave);
-						}
-						if (!seasonsToSave.isEmpty()) {
-							seriesInformationToSave.setSeasons(seasonsToSave);
-						}
-						if (!episodesToSave.isEmpty()) {
-							seriesInformationToSave.setEpisodes(episodesToSave);
-						}
-
-						seriesCategoryRepository.saveAll(seriesInformationToSave.getCategories());
-						seriesRepository.saveAll(seriesInformationToSave.getSeries());
-						seasonRepository.saveAll(seriesInformationToSave.getSeasons());
-						episodeRepository.saveAll(seriesInformationToSave.getEpisodes());
-
-						log.info("Total Series Categories saved: " + seriesInformationToSave.getCategories().size());
-						log.info("Total Series saved: " + seriesInformationToSave.getSeries().size());
-						log.info("Total Seasons saved: " + seriesInformationToSave.getSeasons().size());
-						log.info("Total Episodes saved: " + seriesInformationToSave.getEpisodes().size());
-
-
-
-					}
-
-				} catch (Exception e) { e.printStackTrace(); }
-			}, executor);
-
-			CompletableFuture.allOf(liveCategoriesFuture, movieCategoriesFuture, seriesCategoriesFuture).get();
-		} catch (InterruptedException | ExecutionException e) {
-			e.printStackTrace();
-		}
-		log.info("Finished");
+	        CompletableFuture.allOf(liveTask, movieTask, seriesTask).join();
+	        log.info("Finished");
+	    } catch (Exception e) {
+	        log.error("Top-level error in retreiveJsonData()", e);
+	    }
 	}
 
-	private static void httpGet(URL url, String fileName, XstreamCredentials credentials) {
-		java.net.HttpURLConnection connection = null;
-		int responseCode = -1;
+	@TrackExecutionTime
+	public void fetchAndSaveSeries(XstreamCredentials creds, String seriesCatsUrl) {
+        ApplicationProperties props = applicationPropertiesService.getCurrentProperties();
+        final int SERIES_INFO_MAX_INFLIGHT = props.getSeriesInfoMaxInflight();
+        final int BATCH_SIZE = props.getBatchSize();
+        final int MAX_RETRIES = props.getMaxRetries();
+
+	    final var okCount         = new AtomicInteger();
+	    final var notFoundCount   = new AtomicInteger();
+	    final var otherErrorCount = new AtomicInteger();
+
+	    // Lock-free aggregators; one saver drains them in chunks
+	    final var categoriesQ = new ConcurrentLinkedQueue<SeriesCategory>();
+	    final var seriesQ     = new ConcurrentLinkedQueue<Series>();
+	    final var seasonsQ    = new ConcurrentLinkedQueue<Season>();
+	    final var episodesQ   = new ConcurrentLinkedQueue<Episode>();
+
+	    // Single saver flushing queues in chunks
+	    final var stopSaver = new AtomicBoolean(false);
+	    Thread saver = new Thread(() -> {
+	        List<SeriesCategory> cBuf = new ArrayList<>(BATCH_SIZE);
+	        List<Series>         sBuf = new ArrayList<>(BATCH_SIZE);
+	        List<Season>         seBuf= new ArrayList<>(BATCH_SIZE);
+	        List<Episode>        eBuf = new ArrayList<>(BATCH_SIZE);
+
+	        while (!stopSaver.get() || !categoriesQ.isEmpty() || !seriesQ.isEmpty() || !seasonsQ.isEmpty() || !episodesQ.isEmpty()) {
+	            drain(categoriesQ, cBuf, BATCH_SIZE, list -> seriesCategoryRepository.saveAll(list));
+	            drain(seriesQ,     sBuf, BATCH_SIZE, list -> seriesRepository.saveAll(list));
+	            drain(seasonsQ,   seBuf, BATCH_SIZE, list -> seasonRepository.saveAll(list));
+	            drain(episodesQ,   eBuf, BATCH_SIZE, list -> episodeRepository.saveAll(list));
+
+	            try { Thread.sleep(50); } catch (InterruptedException ignored) {}
+	        }
+	        // final flush
+	        drain(categoriesQ, cBuf, 0, list -> seriesCategoryRepository.saveAll(list));
+	        drain(seriesQ,     sBuf, 0, list -> seriesRepository.saveAll(list));
+	        drain(seasonsQ,   seBuf, 0, list -> seasonRepository.saveAll(list));
+	        drain(episodesQ,   eBuf, 0, list -> episodeRepository.saveAll(list));
+	    }, "series-saver");
+	    saver.start();
+
+	    long lastLog = System.nanoTime();
+	    long processed = 0;
+
+	    try {
+	        HttpResult catsRes = getWithRetry(seriesCatsUrl, creds, MAX_RETRIES);
+	        if (!catsRes.is2xx() || catsRes.body == null) {
+	            log.warn("Series categories request failed: status {}", catsRes.status);
+	            return;
+	        }
+	        List<SeriesCategory> categories = seriesCategoryReader.readValue(catsRes.body);
+	        categoriesQ.addAll(categories);
+
+	        // Gather unique series IDs across all categories
+	        final java.util.Set<String> uniqueSeriesIds = new java.util.HashSet<>(8192);
+
+	        // Bound parallelism with a semaphore
+	        final var gate = new Semaphore(SERIES_INFO_MAX_INFLIGHT);
+	        List<CompletableFuture<Void>> inflight = new ArrayList<>(SERIES_INFO_MAX_INFLIGHT);
+
+	        for (SeriesCategory sc : categories) {
+	            String id = sc.getCategoryId(); // assuming String in your model
+	            if (id == null || id.isBlank()) {
+	                log.debug("Skipping Series Category with null/blank ID: {}", sc.getCategoryName());
+	                continue;
+	            }
+	            final String byCatUrl = XtreamCodesUtils.buildEndpointUrl(Constants.SERIES_BY_CATEGORY, creds, id);
+
+	            HttpResult seriesRes = getWithRetry(byCatUrl, creds, MAX_RETRIES);
+	            if (!seriesRes.is2xx() || seriesRes.body == null) continue;
+
+	            List<Series> inCat = seriesListReader.readValue(seriesRes.body);
+	            if (inCat == null || inCat.isEmpty()) continue;
+
+	            seriesQ.addAll(inCat);
+	            for (Series s : inCat) {
+	                String seriesId = String.valueOf(s.getSeriesId());
+	                if (seriesId == null || seriesId.isBlank()) continue;
+	                if (knownMissingSeries.contains(seriesId)) continue;  // skip known 404s
+	                uniqueSeriesIds.add(seriesId);
+	            }
+	        }
+
+	        // Fan-out only unique IDs
+	        for (String seriesId : uniqueSeriesIds) {
+	            gate.acquireUninterruptibly();
+	            var cf = CompletableFuture.runAsync(() -> {
+	                try {
+	                    fetchOneSeriesInfo(creds, seriesId, seasonsQ, episodesQ, okCount, notFoundCount, otherErrorCount, MAX_RETRIES);
+	                } finally {
+	                    gate.release();
+	                }
+	            }, executor);
+	            inflight.add(cf);
+
+	            // keep list from growing unbounded
+	            if (inflight.size() >= SERIES_INFO_MAX_INFLIGHT * 4) {
+	                CompletableFuture.anyOf(inflight.toArray(new CompletableFuture[0])).join();
+	                inflight.removeIf(CompletableFuture::isDone);
+	            }
+
+	            processed++;
+	            // compact logging every ~2s
+	            if (System.nanoTime() - lastLog > TimeUnit.SECONDS.toNanos(2)) {
+	                int infl = SERIES_INFO_MAX_INFLIGHT - gate.availablePermits();
+	                log.info("Series processed: {} | ok:{} 404:{} other:{} | inflight:{} | queues S:{} Se:{} Ep:{}",
+	                        processed, okCount.get(), notFoundCount.get(), otherErrorCount.get(),
+	                        infl, seriesQ.size(), seasonsQ.size(), episodesQ.size());
+	                lastLog = System.nanoTime();
+	            }
+	        }
+
+	        CompletableFuture.allOf(inflight.toArray(new CompletableFuture[0])).join();
+	    } catch (Exception e) {
+	        log.warn("Series fetch failed", e);
+	    } finally {
+	        stopSaver.set(true);
+	        try { saver.join(); } catch (InterruptedException ignored) {}
+	        log.info("Series summary — ok:{} 404:{} other:{}", okCount.get(), notFoundCount.get(), otherErrorCount.get());
+	    }
+	}
+
+	private static <T> void drain(Queue<T> q, List<T> buf, int threshold, Consumer<List<T>> sink) {
+	    while (!q.isEmpty() && (threshold == 0 || buf.size() < threshold)) {
+	        T t = q.poll();
+	        if (t == null) break;
+	        buf.add(t);
+	    }
+	    if (!buf.isEmpty() && (threshold == 0 || buf.size() >= threshold)) {
+	        sink.accept(List.copyOf(buf));
+	        buf.clear();
+	    }
+	}
+
+	@TrackExecutionTime
+	public void fetchOneSeriesInfo(
+	        XstreamCredentials creds,
+	        String seriesId,
+	        Queue<Season> seasonsQ,
+	        Queue<Episode> episodesQ,
+	        AtomicInteger okCount,
+	        AtomicInteger notFoundCount,
+	        AtomicInteger otherErrorCount,
+	        int max404Retries
+	) {
+	    String url = XtreamCodesUtils.buildEndpointUrl(Constants.SERIES_INFO, creds, seriesId);
+	    int attempt = 0;
+	    while (attempt <= max404Retries) {
+	        try {
+	            // Add random jitter to avoid spikes
+	            long jitter = ThreadLocalRandom.current().nextLong(50, 200);
+	            Thread.sleep(jitter);
+	        } catch (InterruptedException ignored) {}
+	        HttpResult r = getWithRetry(url, creds, max404Retries);
+	        if (r.status == 404) {
+	            if (attempt < max404Retries) {
+	                try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
+	                attempt++;
+	                continue;
+	            }
+	            knownMissingSeries.add(seriesId);
+	            notFoundCount.incrementAndGet();
+	            return;
+	        }
+	        if (!r.is2xx() || r.body == null || r.body.isBlank()) {
+	            otherErrorCount.incrementAndGet();
+	            return;
+	        }
+	        try {
+	            JsonNode root = objectMapper.readTree(r.body);
+	            JsonNode episodesNode = root.path("episodes");
+	            if (!episodesNode.isObject()) { okCount.incrementAndGet(); return; }
+	            Iterator<String> seasonFields = episodesNode.fieldNames();
+	            while (seasonFields.hasNext()) {
+	                String seasonNumRaw = seasonFields.next();
+	                String seasonNum = XtreamCodesUtils.sanitizeName(seasonNumRaw);
+	                JsonNode arr = episodesNode.get(seasonNumRaw);
+	                if (arr == null || !arr.isArray()) continue;
+	                seasonsQ.add(Season.builder()
+	                        .seasonId(seasonNum)
+	                        .seriesId(seriesId)
+	                        .name("Season " + seasonNum)
+	                        .build());
+	                for (JsonNode ep : arr) {
+	                    String epNum = ep.has("episode_num")
+	                            ? XtreamCodesUtils.sanitizeName(ep.get("episode_num").asText())
+	                            : "unknown";
+	                    String episodeId = ep.has("id") ? ep.get("id").asText() : null;
+	                    String containerExtension = ep.has("container_extension") ? ep.get("container_extension").asText() : "mp4";
+	                    String directSource = String.format("%s/series/%s/%s/%s.%s",
+	                            creds.getApiUrl(),
+	                            creds.getUsername(),
+	                            creds.getPassword(),
+	                            episodeId,
+	                            containerExtension
+	                    );
+	                    episodesQ.add(Episode.builder()
+	                            .episodeId(episodeId)
+	                            .seriesId(seriesId)
+	                            .seasonId(seasonNum)
+	                            .name(ep.has("title") ? ep.get("title").asText() : null)
+	                            .episodeNum(epNum)
+	                            .infoJson(ep.toString())
+	                            .directSource(directSource)
+	                            .build());
+	                }
+	            }
+	            okCount.incrementAndGet();
+	            return;
+	        } catch (Exception e) {
+	            otherErrorCount.incrementAndGet();
+	            return;
+	        }
+	    }
+	}
+
+	// ---- Status-aware HTTP with backoff (skips retries on 4xx) ----
+	private HttpResult getWithRetry(String urlStr, XstreamCredentials creds, int maxRetries) {
+	    try {
+	        URL url = new URI(urlStr).toURL();
+	        for (int attempt = 0; attempt <= maxRetries; attempt++) {
+	            try {
+	                HttpResult r = httpGet(url, creds);
+	                if (r.status == 404) {
+	                    log.warn("404 Not Found for URL: {} | user: {} | attempt: {}", url, creds.getUsername(), attempt);
+	                    return r;                    // hard miss, don't retry
+	                }
+	                if (r.is2xx())        return r;                    // success
+	                if (r.status >= 400 && r.status < 500) {
+	                    log.warn("{} Client Error for URL: {} | user: {} | attempt: {}", r.status, url, creds.getUsername(), attempt);
+	                    return r;   // other client errors: no retry
+	                }
+	                // 5xx or weird -> retry
+	            } catch (IOException io) {
+	                // network issue -> retry
+	            } catch (Exception ex) {
+	                // transient -> retry
+	            }
+	            long jitter = RAND.nextLong(50, 150);
+	            long sleepMs = Math.min((long) (BASE_BACKOFF.toMillis() * Math.pow(2, attempt)) + jitter, 4000);
+	            try { Thread.sleep(sleepMs); } catch (InterruptedException ignored) {}
+	        }
+	    } catch (Exception e) {
+	        // bad URL
+	    }
+	    return new HttpResult(599, null); // network/unknown
+	}
+
+	private HttpResult httpGet(URL url, XstreamCredentials credentials) throws IOException {
+		java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
 		try {
-			connection = (java.net.HttpURLConnection) url.openConnection();
 			connection.setRequestProperty("User-Agent", "Mozilla/5.0");
 			connection.setConnectTimeout(10000);
 			connection.setReadTimeout(30000);
-			// Add Basic Auth header if credentials are present
-			if (credentials.getUsername() != null && credentials.getPassword() != null) {
-				String auth = credentials.getUsername() + ":" + credentials.getPassword();
-				String encodedAuth = java.util.Base64.getEncoder().encodeToString(auth.getBytes());
-				connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
-			}
-			responseCode = connection.getResponseCode();
-			if (responseCode != 200) {
-				String msg = "HTTP error: " + responseCode + " - " + connection.getResponseMessage();
-				if (responseCode == 513) {
-					msg += " (Custom: Possible authentication or server-side error)";
-				}
-				log.error("Request to " + url + " failed. " + msg);
-				return;
-			}
-			try (java.io.InputStream is = connection.getInputStream()) {
-				// Write JSON to file directly using Jackson for performance
-				java.nio.file.Files.copy(is, java.nio.file.Paths.get(fileName), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-			}
-		} catch (Exception e) {
-			log.error("Exception during HTTP GET to " + url + ": " + e.getMessage());
-			e.printStackTrace();
-		} finally {
-			if (connection != null) {
-				connection.disconnect();
-			}
-		}
-	}
-
-	private static String httpGetToString(URL url, XstreamCredentials credentials) {
-		java.net.HttpURLConnection connection = null;
-		try {
-			connection = (java.net.HttpURLConnection) url.openConnection();
-			connection.setRequestProperty("User-Agent", "Mozilla/5.0");
-			connection.setConnectTimeout(10000);
-			connection.setReadTimeout(30000);
-			if (credentials.getUsername() != null && credentials.getPassword() != null) {
-				String auth = credentials.getUsername() + ":" + credentials.getPassword();
-				String encodedAuth = java.util.Base64.getEncoder().encodeToString(auth.getBytes());
-				connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
-			}
+			// DO NOT set HTTP Basic Authorization header for Xtream Codes API
 			int responseCode = connection.getResponseCode();
-			if (responseCode != 200) {
-				log.error("Request to " + url + " failed. HTTP error: " + responseCode + " - " + connection.getResponseMessage());
-				return null;
+			java.io.InputStream is = (responseCode >= 200 && responseCode < 300)
+					? connection.getInputStream()
+					: connection.getErrorStream();
+			String body = null;
+			if (is != null) {
+				try (is) { body = new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8); }
 			}
-			try (java.io.InputStream is = connection.getInputStream()) {
-				return new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
-			}
-		} catch (Exception e) {
-			log.error("Exception during HTTP GET to " + url + ": " + e.getMessage());
-			e.printStackTrace();
-			return null;
+			return new HttpResult(responseCode, body);
 		} finally {
-			if (connection != null) {
-				connection.disconnect();
-			}
+			connection.disconnect();
 		}
 	}
 
+	// --- Legacy utility methods (kept if other callers still use them) ---
 	public static <T> List<T> readListFromFile(String filePath, Class<T> clazz) {
 		try {
 			return objectMapper.readValue(
 					Paths.get(filePath).toFile(),
 					objectMapper.getTypeFactory().constructCollectionType(List.class, clazz)
-					);
+			);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return java.util.Collections.emptyList();
@@ -376,12 +496,9 @@ public class JsonService {
 		return movieStreamRepository.findByCategoryId(categoryId);
 	}
 
-
-
 	public Page<MovieStream> getMoviesByCategory(String categoryId, int page, int size, String letter) {
 		CompletableFuture<Page<MovieStream>> future = CompletableFuture.supplyAsync(() -> {
 			List<MovieStream> movies = movieStreamRepository.findByCategoryId(categoryId);
-			// Filter by letter using cleaned title if needed
 			if (letter != null && !letter.isEmpty()) {
 				movies = movies.stream()
 						.filter(m -> {
@@ -390,11 +507,9 @@ public class JsonService {
 						})
 						.toList();
 			}
-			// Sort by cleaned title
 			movies = movies.stream()
 					.sorted(java.util.Comparator.comparing(m -> XtreamCodesUtils.cleanTitle(m.getName()), String.CASE_INSENSITIVE_ORDER))
 					.toList();
-			// Page manually
 			int start = Math.min(page * size, movies.size());
 			int end = Math.min(start + size, movies.size());
 			List<MovieStream> pageContent = movies.subList(start, end);
@@ -413,11 +528,66 @@ public class JsonService {
 		List<MovieStream> movies = movieStreamRepository.findByCategoryId(categoryId);
 		java.util.Set<String> letters = new java.util.TreeSet<>();
 		for (MovieStream movie : movies) {
-			String cleaned = XtreamCodesUtils.cleanTitle(movie.getName());
-			if (!cleaned.isEmpty()) {
-				letters.add(cleaned.substring(0, 1).toUpperCase());
+			String title = XtreamCodesUtils.cleanTitle(movie.getName());
+			if (!title.isEmpty()) {
+				letters.add(title.substring(0, 1).toUpperCase());
 			}
 		}
-		return new java.util.ArrayList<>(letters);
+		return new ArrayList<>(letters);
+	}
+
+	public List<LiveCategory> getAllLiveCategories() {
+		return liveCategoryRepository.findAll();
+	}
+
+	public List<LiveStream> getLiveStreamsByCategory(String categoryId) {
+		return liveStreamRepository.findByCategoryId(categoryId);
+	}
+
+	public List<SeriesCategory> getAllSeriesCategories() {
+		return seriesCategoryRepository.findAll();
+	}
+
+	public List<Series> getSeriesByCategory(String categoryId) {
+		return seriesRepository.findByCategoryId(categoryId);
+	}
+
+	public org.springframework.data.domain.Page<Series> getSeriesByCategory(String categoryId, int page, int size, String letter) {
+        java.util.List<Series> seriesList = seriesRepository.findByCategoryId(categoryId);
+        if (letter != null && !letter.isEmpty()) {
+            seriesList = seriesList.stream()
+                    .filter(s -> {
+                        String cleaned = com.hawkins.xtreamjson.util.XtreamCodesUtils.cleanTitle(s.getName());
+                        return !cleaned.isEmpty() && cleaned.substring(0, 1).equalsIgnoreCase(letter);
+                    })
+                    .toList();
+        }
+        seriesList = seriesList.stream()
+                .sorted(java.util.Comparator.comparing(s -> com.hawkins.xtreamjson.util.XtreamCodesUtils.cleanTitle(s.getName()), String.CASE_INSENSITIVE_ORDER))
+                .toList();
+        int start = Math.min(page * size, seriesList.size());
+        int end = Math.min(start + size, seriesList.size());
+        java.util.List<Series> pageContent = seriesList.subList(start, end);
+        return new org.springframework.data.domain.PageImpl<>(pageContent, org.springframework.data.domain.PageRequest.of(page, size), seriesList.size());
+    }
+
+    public java.util.List<String> getAvailableSeriesStartingLetters(String categoryId) {
+        java.util.List<Series> seriesList = seriesRepository.findByCategoryId(categoryId);
+        java.util.Set<String> letters = new java.util.TreeSet<>();
+        for (Series s : seriesList) {
+            String cleaned = com.hawkins.xtreamjson.util.XtreamCodesUtils.cleanTitle(s.getName());
+            if (!cleaned.isEmpty()) {
+                letters.add(cleaned.substring(0, 1).toUpperCase());
+            }
+        }
+        return new java.util.ArrayList<>(letters);
+    }
+
+	public List<Season> getSeasonsBySeries(String seriesId) {
+		return seasonRepository.findBySeriesId(seriesId);
+	}
+
+	public List<Episode> getEpisodesBySeason(String seasonId) {
+		return episodeRepository.findBySeasonId(seasonId);
 	}
 }

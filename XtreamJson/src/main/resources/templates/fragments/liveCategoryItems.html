@@ -1,11 +1,20 @@
-<div th:fragment="items">
+<div th:fragment="live-category-items">
     <div th:if="${#lists.isEmpty(items)}">
         <p>No items found for this category.</p>
     </div>
-    <ul th:if="${!#lists.isEmpty(items)}">
-        <li th:each="item : ${items}">
-            <a th:href="@{'/stream.html'(url=${item.directSource})}"
-               th:text="${item.name}"></a>
-        </li>
-    </ul>
+    <div class="d-flex flex-wrap justify-content-start" th:if="${!#lists.isEmpty(items)}" style="gap: 0.5rem;">
+        <div th:each="item : ${items}"
+             style="width: calc(75px + 2vw); min-width: 75px; max-width: 120px;">
+            <div class="card h-100 text-center" style="font-size: 0.85rem; border-radius: 0.5rem;">
+                <a th:href="@{'/stream.html'(url=${item.directSource})}">
+                    <img th:src="${item.streamIcon}" class="card-img-top img-fluid" alt="Stream Icon" style="width: 75px; height: 75px; object-fit: contain; background: #f8f9fa; margin: 0 auto;"/>
+                </a>
+                <div class="card-body p-1">
+                    <a th:href="@{'/stream.html'(url=${item.directSource})}" class="stretched-link text-decoration-none text-dark">
+                        <div th:text="${item.name}" style="font-size: 0.85em; word-break: break-word;"></div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

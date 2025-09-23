@@ -1,0 +1,124 @@
+<div th:fragment="navbar">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">XtreamJson</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarActions" aria-controls="navbarActions" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarActions">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="btn btn-outline-warning me-2 my-1" href="#"
+             hx-get="/admin/properties"
+             hx-target="#admin-properties-container"
+             hx-swap="innerHTML"
+             hx-on:click="
+                if (!document.getElementById('admin-properties-container')) { window.location.href = '/admin/properties'; return false; }
+                document.getElementById('admin-properties-container').innerHTML='';
+                document.getElementById('providers-container').innerHTML='';
+                document.getElementById('live-category-dropdown').innerHTML='';
+                document.getElementById('movie-category-dropdown').innerHTML='';
+                document.getElementById('series-category-dropdown').innerHTML='';
+                document.getElementById('series-list-container').innerHTML='';
+                document.getElementById('seasons-list').innerHTML='';
+                document.getElementById('movie-category-container').innerHTML='';
+                document.getElementById('movie-category-items').innerHTML='';
+                document.getElementById('live-category-items').innerHTML='';
+             ">
+            Properties
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="btn btn-outline-light me-2 my-1" href="#" 
+             hx-get="/providers/fragment" 
+             hx-target="#providers-container" 
+             hx-swap="innerHTML"
+             hx-on:click="
+                if (!document.getElementById('providers-container')) { window.location.href = '/?show=providers'; return false; }
+                document.getElementById('admin-properties-container').innerHTML='';
+                document.getElementById('live-category-dropdown').innerHTML='';
+                document.getElementById('movie-category-dropdown').innerHTML='';
+                document.getElementById('series-category-dropdown').innerHTML='';
+                document.getElementById('series-list-container').innerHTML='';
+                document.getElementById('seasons-list').innerHTML='';
+                document.getElementById('movie-category-container').innerHTML='';
+                document.getElementById('movie-category-items').innerHTML='';
+                document.getElementById('live-category-items').innerHTML='';
+             ">
+            Providers
+          </a>
+        </li>
+        <li class="nav-item">
+          <button class="btn btn-outline-light me-2 my-1" 
+                  type="button"
+                  data-bs-toggle="modal"
+                  data-bs-target="#resetDatabaseModal">
+            Reset Database
+          </button>
+        </li>
+        <li class="nav-item">
+          <a class="btn btn-outline-light my-1" href="#" 
+             hx-get="/liveCategoriesDropdown" 
+             hx-target="#live-category-dropdown" 
+             hx-swap="innerHTML"
+             hx-on:click="
+                if (!document.getElementById('live-category-dropdown')) { window.location.href = '/?show=live'; return false; }
+                document.getElementById('admin-properties-container').innerHTML='';
+                document.getElementById('providers-container').innerHTML='';
+                document.getElementById('movie-category-dropdown').innerHTML='';
+                document.getElementById('series-category-dropdown').innerHTML='';
+                document.getElementById('series-list-container').innerHTML='';
+                document.getElementById('seasons-list').innerHTML='';
+                document.getElementById('movie-category-container').innerHTML='';
+                document.getElementById('movie-category-items').innerHTML='';
+                document.getElementById('live-category-items').innerHTML='';
+             ">
+            Show Live Categories
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="btn btn-outline-light my-1" href="#" 
+             hx-get="/movieCategoriesDropdown" 
+             hx-target="#movie-category-dropdown" 
+             hx-swap="innerHTML"
+             hx-on:click="
+                if (!document.getElementById('movie-category-dropdown')) { window.location.href = '/?show=movie'; return false; }
+                document.getElementById('admin-properties-container').innerHTML='';
+                document.getElementById('providers-container').innerHTML='';
+                document.getElementById('live-category-dropdown').innerHTML='';
+                document.getElementById('series-category-dropdown').innerHTML='';
+                document.getElementById('series-list-container').innerHTML='';
+                document.getElementById('seasons-list').innerHTML='';
+                document.getElementById('movie-category-container').innerHTML='';
+                document.getElementById('movie-category-items').innerHTML='';
+                document.getElementById('live-category-items').innerHTML='';
+             ">
+            Show Movie Categories
+          </a>
+        </li>
+        <li style="margin-left: 0.5rem;"></li> <!-- Added space between the two buttons -->
+        <li class="nav-item">
+          <a class="btn btn-outline-light my-1" href="#" 
+             hx-get="/seriesCategoriesDropdown" 
+             hx-target="#series-category-dropdown" 
+             hx-swap="innerHTML"
+             hx-on:click="
+                if (!document.getElementById('series-category-dropdown')) { window.location.href = '/?show=series'; return false; }
+                document.getElementById('admin-properties-container').innerHTML='';
+                document.getElementById('providers-container').innerHTML='';
+                document.getElementById('live-category-dropdown').innerHTML='';
+                document.getElementById('movie-category-dropdown').innerHTML='';
+                document.getElementById('series-list-container').innerHTML='';
+                document.getElementById('seasons-list').innerHTML='';
+                document.getElementById('movie-category-container').innerHTML='';
+                document.getElementById('movie-category-items').innerHTML='';
+                document.getElementById('live-category-items').innerHTML='';
+             ">
+            Show Series Categories
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+</div>

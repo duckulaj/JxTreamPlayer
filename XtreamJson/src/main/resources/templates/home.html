@@ -6,7 +6,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <script src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
     <style>
         body { padding-top: 70px; }
         .movie-item, .live-item { padding: 0.5rem 0; border-bottom: 1px solid #eee; }
@@ -69,59 +68,7 @@
     </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="#">XtreamJson</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarActions" aria-controls="navbarActions" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarActions">
-      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="btn btn-outline-light me-2 my-1" href="#" 
-             hx-get="/providers/fragment" 
-             hx-target="#providers-container" 
-             hx-swap="innerHTML">
-            Providers
-          </a>
-        </li>
-        <li class="nav-item">
-          <button class="btn btn-outline-light me-2 my-1" 
-                  hx-get="/resetDatabase" 
-                  hx-target="#reset-status" 
-                  hx-swap="innerHTML">
-            Reset Database
-          </button>
-        </li>
-        <li class="nav-item">
-          <a class="btn btn-outline-light me-2 my-1" href="#" 
-             hx-get="/liveCategoriesDropdown" 
-             hx-target="#live-category-dropdown" 
-             hx-swap="innerHTML">
-            Show Live Categories
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="btn btn-outline-light my-1" href="#" 
-             hx-get="/movieCategoriesDropdown" 
-             hx-target="#movie-category-dropdown" 
-             hx-swap="innerHTML">
-            Show Movie Categories
-          </a>
-        </li>
-        <li style="margin-left: 0.5rem;"></li> <!-- Added space between the two buttons -->
-        <li class="nav-item">
-          <a class="btn btn-outline-light my-1" href="#" 
-             hx-get="/seriesCategoriesDropdown" 
-             hx-target="#series-category-dropdown" 
-             hx-swap="innerHTML">
-            Show Series Categories
-          </a>
-        </li>
-      </ul>
-    </div>
-  </div>
-</nav>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
 
 <div class="container-fluid mt-4 text-center">
     <h1 class="mb-4" th:text="${message}">Welcome to XtreamJson Home Page!</h1>
@@ -132,14 +79,87 @@
       <div id="live-category-items" class="mb-4"></div>
       <div id="movie-category-dropdown" class="mb-2"></div>
       <div id="series-category-dropdown" class="mb-2"></div>
+      <div id="series-list-container" class="mb-2"></div>
+      <div id="seasons-list"></div>
     </div>
     <div id="movie-category-container" class="w-100"></div>
     <div id="movie-category-items"></div>
     <div id="providers-container"></div>
+    <div id="admin-properties-container"></div>
 </div>
+
+<div th:replace="~{fragments/resetDatabaseModal :: resetDatabaseModal}"></div>
 
 <script>
 // Removed Clappr integration. No custom JS needed for standard <video> tag.
+
+(function() {
+  let resetDbController = {
+    xhr: null,
+    modal: null,
+    init: function() {
+      this.modal = new bootstrap.Modal(document.getElementById('resetDatabaseModal'));
+      document.querySelector('[data-bs-target="#resetDatabaseModal"]').addEventListener('click', () => {
+        document.getElementById('resetDatabaseModalMessage').textContent = 'Updating database, please wait...';
+        document.getElementById('cancelResetDatabaseBtn').disabled = false;
+        this.startReset();
+      });
+      document.getElementById('cancelResetDatabaseBtn').addEventListener('click', () => {
+        this.cancelReset();
+      });
+    },
+    startReset: function() {
+      this.xhr = new XMLHttpRequest();
+      this.xhr.open('GET', '/resetDatabase', true);
+      this.xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+      this.xhr.onreadystatechange = () => {
+        if (this.xhr.readyState === 4) {
+          document.getElementById('cancelResetDatabaseBtn').disabled = false;
+          if (this.modal) {
+            this.modal.hide();
+          }
+          document.getElementById('reset-status').innerHTML = this.xhr.status === 200 ? this.xhr.responseText : '<div class="alert alert-danger">Error updating database.</div>';
+          this.xhr = null;
+        }
+      };
+      this.xhr.onabort = () => {
+        if (this.modal) {
+          this.modal.hide();
+        }
+        document.getElementById('reset-status').innerHTML = '<div class="alert alert-info">Database update cancelled.</div>';
+        this.xhr = null;
+      };
+      document.getElementById('cancelResetDatabaseBtn').disabled = false;
+      if (this.modal) {
+        this.modal.show();
+      }
+      this.xhr.send();
+    },
+    cancelReset: function() {
+      if (this.xhr) {
+        this.xhr.abort();
+        this.xhr = null;
+      }
+      if (this.modal) {
+        this.modal.hide();
+      }
+      document.getElementById('reset-status').innerHTML = '<div class="alert alert-info">Cancelling database update...</div>';
+      // Send cancel request to backend
+      var xhrCancel = new XMLHttpRequest();
+      xhrCancel.open('GET', '/cancelResetDatabase', true);
+      xhrCancel.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+      xhrCancel.onreadystatechange = function() {
+        if (xhrCancel.readyState === 4) {
+          document.getElementById('reset-status').innerHTML = xhrCancel.status === 200 ? xhrCancel.responseText : '<div class="alert alert-danger">Error cancelling database update.</div>';
+        }
+      };
+      xhrCancel.send();
+    }
+  };
+  document.addEventListener('DOMContentLoaded', function() {
+    resetDbController.init();
+  });
+})();
 </script>
 </body>
 </html>

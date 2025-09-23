@@ -1,6 +1,6 @@
-<div th:fragment="dropdown">
+<div th:fragment="live-categories-dropdown">
     <label for="live-category-select">Select Live Category:</label>
-    <select id="live-category-select"
+    <select id="live-category-select" class="form-select w-auto d-inline-block"
             name="categoryId"
             hx-get="/liveCategoryItems"
             hx-target="#live-category-items"

@@ -1,12 +1,13 @@
 package com.hawkins.xtreamjson.repository;
 
-import com.hawkins.xtreamjson.model.IptvProvider;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
+import com.hawkins.xtreamjson.model.IptvProvider;
 
 public interface IptvProviderRepository extends JpaRepository<IptvProvider, Long> {
     Optional<IptvProvider> findBySelectedTrue();
