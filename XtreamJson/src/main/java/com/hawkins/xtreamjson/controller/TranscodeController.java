@@ -2,9 +2,6 @@ package com.hawkins.xtreamjson.controller;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.UUID;
 
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,7 +37,7 @@ public class TranscodeController {
             };
             ProcessBuilder pb = new ProcessBuilder(nvencCmd); // No error file redirection
             process = pb.start();
-            boolean usedNvenc = true;
+            // boolean usedNvenc = true;
             try (InputStream in = process.getInputStream(); OutputStream out = response.getOutputStream()) {
                 byte[] buffer = new byte[8192];
                 int len;
@@ -51,8 +48,7 @@ public class TranscodeController {
             }
             int exitCode = process.waitFor();
             if (exitCode != 0) {
-                // If NVENC fails, try libx264 as fallback
-                usedNvenc = false;
+                // usedNvenc = false;
                 String[] x264Cmd = {
                     "ffmpeg",
                     "-fflags", "+nobuffer+genpts+discardcorrupt",

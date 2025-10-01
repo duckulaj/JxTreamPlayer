@@ -9,9 +9,11 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Transient;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 @Entity
 public class Series {
     @Id
