@@ -489,71 +489,101 @@ public class JsonService {
 	}
 
 	public List<MovieCategory> getAllMovieCategories() {
-		return movieCategoryRepository.findAll();
-	}
+        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        return movieCategoryRepository.findAll().stream()
+            .filter(cat -> isIncluded(cat.getCategoryName(), includedSet))
+            .toList();
+    }
 
-	public List<MovieStream> getMoviesByCategory(String categoryId) {
-		return movieStreamRepository.findByCategoryId(categoryId);
-	}
+    public List<MovieStream> getMoviesByCategory(String categoryId) {
+        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        return movieStreamRepository.findByCategoryId(categoryId).stream()
+            .filter(m -> isIncluded(m.getName(), includedSet))
+            .toList();
+    }
 
-	public Page<MovieStream> getMoviesByCategory(String categoryId, int page, int size, String letter) {
-		CompletableFuture<Page<MovieStream>> future = CompletableFuture.supplyAsync(() -> {
-			List<MovieStream> movies = movieStreamRepository.findByCategoryId(categoryId);
-			if (letter != null && !letter.isEmpty()) {
-				movies = movies.stream()
-						.filter(m -> {
-							String cleaned = XtreamCodesUtils.cleanTitle(m.getName());
-							return !cleaned.isEmpty() && cleaned.substring(0, 1).equalsIgnoreCase(letter);
-						})
-						.toList();
-			}
-			movies = movies.stream()
-					.sorted(java.util.Comparator.comparing(m -> XtreamCodesUtils.cleanTitle(m.getName()), String.CASE_INSENSITIVE_ORDER))
-					.toList();
-			int start = Math.min(page * size, movies.size());
-			int end = Math.min(start + size, movies.size());
-			List<MovieStream> pageContent = movies.subList(start, end);
-			return new org.springframework.data.domain.PageImpl<>(pageContent, PageRequest.of(page, size), movies.size());
-		}, executor);
-		try {
-			return future.get();
-		} catch (InterruptedException | ExecutionException e) {
-			log.error("Error in getMoviesByCategory CompletableFuture", e);
-			Thread.currentThread().interrupt();
-			return Page.empty();
-		}
-	}
+    public Page<MovieStream> getMoviesByCategory(String categoryId, int page, int size, String letter) {
+        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        CompletableFuture<Page<MovieStream>> future = CompletableFuture.supplyAsync(() -> {
+            List<MovieStream> movies = movieStreamRepository.findByCategoryId(categoryId);
+            movies = movies.stream()
+                .filter(m -> isIncluded(m.getName(), includedSet))
+                .toList();
+            if (letter != null && !letter.isEmpty()) {
+                movies = movies.stream()
+                        .filter(m -> {
+                            String cleaned = XtreamCodesUtils.cleanTitle(m.getName());
+                            return !cleaned.isEmpty() && cleaned.substring(0, 1).equalsIgnoreCase(letter);
+                        })
+                        .toList();
+            }
+            movies = movies.stream()
+                    .sorted(java.util.Comparator.comparing(m -> XtreamCodesUtils.cleanTitle(m.getName()), String.CASE_INSENSITIVE_ORDER))
+                    .toList();
+            int start = Math.min(page * size, movies.size());
+            int end = Math.min(start + size, movies.size());
+            List<MovieStream> pageContent = movies.subList(start, end);
+            return new org.springframework.data.domain.PageImpl<>(pageContent, PageRequest.of(page, size), movies.size());
+        }, executor);
+        try {
+            return future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            log.error("Error in getMoviesByCategory CompletableFuture", e);
+            Thread.currentThread().interrupt();
+            return Page.empty();
+        }
+    }
 
-	public List<String> getAvailableStartingLetters(String categoryId) {
-		List<MovieStream> movies = movieStreamRepository.findByCategoryId(categoryId);
-		java.util.Set<String> letters = new java.util.TreeSet<>();
-		for (MovieStream movie : movies) {
-			String title = XtreamCodesUtils.cleanTitle(movie.getName());
-			if (!title.isEmpty()) {
-				letters.add(title.substring(0, 1).toUpperCase());
-			}
-		}
-		return new ArrayList<>(letters);
-	}
+    public List<String> getAvailableStartingLetters(String categoryId) {
+        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        List<MovieStream> movies = movieStreamRepository.findByCategoryId(categoryId);
+        java.util.Set<String> letters = new java.util.TreeSet<>();
+        for (MovieStream movie : movies) {
+            String title = XtreamCodesUtils.cleanTitle(movie.getName());
+            if (!title.isEmpty()) {
+                String first = title.substring(0, 1).toUpperCase();
+                if (includedSet.contains(first)) {
+                    letters.add(first);
+                }
+            }
+        }
+        return new ArrayList<>(letters);
+    }
 
-	public List<LiveCategory> getAllLiveCategories() {
-		return liveCategoryRepository.findAll();
-	}
+    public List<LiveCategory> getAllLiveCategories() {
+        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        return liveCategoryRepository.findAll().stream()
+            .filter(cat -> isIncluded(cat.getCategoryName(), includedSet))
+            .toList();
+    }
 
-	public List<LiveStream> getLiveStreamsByCategory(String categoryId) {
-		return liveStreamRepository.findByCategoryId(categoryId);
-	}
+    public List<LiveStream> getLiveStreamsByCategory(String categoryId) {
+        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        return liveStreamRepository.findByCategoryId(categoryId).stream()
+            .filter(s -> isIncluded(s.getName(), includedSet))
+            .toList();
+    }
 
-	public List<SeriesCategory> getAllSeriesCategories() {
-		return seriesCategoryRepository.findAll();
-	}
+    public List<SeriesCategory> getAllSeriesCategories() {
+        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        return seriesCategoryRepository.findAll().stream()
+            .filter(cat -> isIncluded(cat.getCategoryName(), includedSet))
+            .toList();
+    }
 
-	public List<Series> getSeriesByCategory(String categoryId) {
-		return seriesRepository.findByCategoryId(categoryId);
-	}
+    public List<Series> getSeriesByCategory(String categoryId) {
+        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        return seriesRepository.findByCategoryId(categoryId).stream()
+            .filter(s -> isIncluded(s.getName(), includedSet))
+            .toList();
+    }
 
-	public org.springframework.data.domain.Page<Series> getSeriesByCategory(String categoryId, int page, int size, String letter) {
+    public org.springframework.data.domain.Page<Series> getSeriesByCategory(String categoryId, int page, int size, String letter) {
+        java.util.Set<String> includedSet = getIncludedCountriesSet();
         java.util.List<Series> seriesList = seriesRepository.findByCategoryId(categoryId);
+        seriesList = seriesList.stream()
+                .filter(s -> isIncluded(s.getName(), includedSet))
+                .toList();
         if (letter != null && !letter.isEmpty()) {
             seriesList = seriesList.stream()
                     .filter(s -> {
@@ -572,12 +602,16 @@ public class JsonService {
     }
 
     public java.util.List<String> getAvailableSeriesStartingLetters(String categoryId) {
+        java.util.Set<String> includedSet = getIncludedCountriesSet();
         java.util.List<Series> seriesList = seriesRepository.findByCategoryId(categoryId);
         java.util.Set<String> letters = new java.util.TreeSet<>();
         for (Series s : seriesList) {
             String cleaned = com.hawkins.xtreamjson.util.XtreamCodesUtils.cleanTitle(s.getName());
             if (!cleaned.isEmpty()) {
-                letters.add(cleaned.substring(0, 1).toUpperCase());
+                String first = cleaned.substring(0, 1).toUpperCase();
+                if (includedSet.contains(first)) {
+                    letters.add(first);
+                }
             }
         }
         return new java.util.ArrayList<>(letters);
@@ -590,4 +624,23 @@ public class JsonService {
 	public List<Episode> getEpisodesBySeason(String seasonId) {
 		return episodeRepository.findBySeasonId(seasonId);
 	}
+
+    // Helper to get includedCountries as a Set<String>
+    private java.util.Set<String> getIncludedCountriesSet() {
+        String included = applicationPropertiesService.getCurrentProperties().getIncludedCountries();
+        if (included == null || included.isBlank()) return java.util.Collections.emptySet();
+        java.util.Set<String> set = new java.util.HashSet<>();
+        for (String s : included.split(",")) {
+            String trimmed = s.trim();
+            if (!trimmed.isEmpty()) set.add(trimmed.toUpperCase());
+        }
+        return set;
+    }
+
+    // Helper to check if a name matches includedCountries
+    private boolean isIncluded(String name, java.util.Set<String> includedSet) {
+        if (name == null || name.isEmpty() || includedSet.isEmpty()) return false;
+        String first = name.substring(0, 1).toUpperCase();
+        return includedSet.contains(first);
+    }
 }

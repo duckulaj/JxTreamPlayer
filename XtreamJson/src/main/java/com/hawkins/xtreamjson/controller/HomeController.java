@@ -25,6 +25,7 @@ import com.hawkins.xtreamjson.repository.SeriesCategoryRepository;
 import com.hawkins.xtreamjson.repository.SeriesRepository;
 import com.hawkins.xtreamjson.service.IptvProviderService;
 import com.hawkins.xtreamjson.service.JsonService;
+import com.hawkins.xtreamjson.service.StrmService;
 import com.hawkins.xtreamjson.util.StreamUrlHelper;
 
 @Controller
@@ -37,13 +38,14 @@ public class HomeController {
     private final SeriesRepository seriesRepository;
     private final SeasonRepository seasonRepository;
     private final EpisodeRepository episodeRepository;
+    private final StrmService strmService;
 
     private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
     private static final ExecutorService resetExecutor = Executors.newSingleThreadExecutor();
     private static final AtomicReference<Future<?>> resetFutureRef = new AtomicReference<>();
 
     
-    public HomeController(JsonService jsonService, LiveCategoryRepository liveCategoryRepository, LiveStreamRepository liveStreamRepository, IptvProviderService providerService, SeriesCategoryRepository seriesCategoryRepository, SeriesRepository seriesRepository, SeasonRepository seasonRepository, EpisodeRepository episodeRepository) {
+    public HomeController(JsonService jsonService, LiveCategoryRepository liveCategoryRepository, LiveStreamRepository liveStreamRepository, IptvProviderService providerService, SeriesCategoryRepository seriesCategoryRepository, SeriesRepository seriesRepository, SeasonRepository seasonRepository, EpisodeRepository episodeRepository, StrmService strmService) {
         this.jsonService = jsonService;
         this.liveCategoryRepository = liveCategoryRepository;
         this.liveStreamRepository = liveStreamRepository;
@@ -52,6 +54,7 @@ public class HomeController {
         this.seriesRepository = seriesRepository;
         this.seasonRepository = seasonRepository;
         this.episodeRepository = episodeRepository;
+        this.strmService = strmService;
     }
 
     @GetMapping("/")
@@ -244,5 +247,18 @@ public class HomeController {
         model.addAttribute("categoryId", categoryId);
         model.addAttribute("pageSize", size);
         return "fragments/seriesCategoryPage :: series-category-page";
+    }
+
+    @GetMapping("/createStreams")
+    public String createStreams(Model model) {
+        try {
+            strmService.generateStrmFiles();
+            model.addAttribute("streamStatus", "Movie stream folders and .strm files created successfully.");
+        } catch (Exception e) {
+            logger.error("Error generating .strm files", e);
+            model.addAttribute("streamStatus", "Error creating .strm files: " + e.getMessage());
+        }
+        // return "fragments/resetStatus :: status";
+        return "home";
     }
 }

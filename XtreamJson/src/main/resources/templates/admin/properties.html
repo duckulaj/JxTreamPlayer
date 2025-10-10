@@ -10,53 +10,72 @@
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <h2>Application Properties</h2>
 
+<!-- View Log Button -->
 <div class="mb-3">
-    <form th:action="@{/admin/properties}" th:object="${currentProperties}" method="post" class="row g-3">
-        <input type="hidden" th:field="*{id}" />
-        <div class="col-md-4">
-            <label for="seriesInfoMaxInflight" class="form-label">Series Info Max Inflight</label>
-            <input type="number" class="form-control" id="seriesInfoMaxInflight" name="seriesInfoMaxInflight" th:field="*{seriesInfoMaxInflight}" min="1" required>
-        </div>
-        <div class="col-md-4">
-            <label for="batchSize" class="form-label">Batch Size</label>
-            <input type="number" class="form-control" id="batchSize" name="batchSize" th:field="*{batchSize}" min="1" required>
-        </div>
-        <div class="col-md-4">
-            <label for="maxRetries" class="form-label">Max Retries</label>
-            <input type="number" class="form-control" id="maxRetries" name="maxRetries" th:field="*{maxRetries}" min="0" required>
-        </div>
-        <div class="col-12 mt-3">
-            <button type="submit" class="btn btn-primary">Save</button>
-        </div>
-    </form>
+    <button class="btn btn-info" 
+            hx-get="/admin/viewLog" 
+            hx-target="#admin-content" 
+            hx-swap="innerHTML">
+        View Log
+    </button>
 </div>
 
-<h4>All Properties Records</h4>
-<table class="table table-bordered">
-    <thead>
-    <tr>
-        <th>ID</th>
-        <th>Series Info Max Inflight</th>
-        <th>Batch Size</th>
-        <th>Max Retries</th>
-        <th>Actions</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="prop : ${propertiesList}">
-        <td th:text="${prop.id}"></td>
-        <td th:text="${prop.seriesInfoMaxInflight}"></td>
-        <td th:text="${prop.batchSize}"></td>
-        <td th:text="${prop.maxRetries}"></td>
-        <td>
-            <a th:href="@{'/admin/properties/edit/' + ${prop.id}}" class="btn btn-sm btn-secondary">Edit</a>
-            <form th:action="@{'/admin/properties/delete/' + ${prop.id}}" method="post" style="display:inline;">
-                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this record?');">Delete</button>
-            </form>
-        </td>
-    </tr>
-    </tbody>
-</table>
+<!-- Main Content Container -->
+<div id="admin-content">
+    <div class="mb-3">
+        <form th:action="@{/admin/properties}" th:object="${currentProperties}" method="post" class="row g-3">
+            <input type="hidden" th:field="*{id}" />
+            <div class="col-md-4">
+                <label for="seriesInfoMaxInflight" class="form-label">Series Info Max Inflight</label>
+                <input type="number" class="form-control" id="seriesInfoMaxInflight" name="seriesInfoMaxInflight" th:field="*{seriesInfoMaxInflight}" min="1" required>
+            </div>
+            <div class="col-md-4">
+                <label for="batchSize" class="form-label">Batch Size</label>
+                <input type="number" class="form-control" id="batchSize" name="batchSize" th:field="*{batchSize}" min="1" required>
+            </div>
+            <div class="col-md-4">
+                <label for="maxRetries" class="form-label">Max Retries</label>
+                <input type="number" class="form-control" id="maxRetries" name="maxRetries" th:field="*{maxRetries}" min="0" required>
+            </div>
+            <div class="col-md-4">
+                <label for="includedCountries" class="form-label">Included Countries</label>
+                <input type="text" class="form-control" id="includedCountries" name="includedCountries" th:field="*{includedCountries}" required>
+            </div>
+            <div class="col-12 mt-3">
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+        </form>
+    </div>
+
+    <h4>All Properties Records</h4>
+    <table class="table table-bordered">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Series Info Max Inflight</th>
+            <th>Batch Size</th>
+            <th>Max Retries</th>
+            <th>Included Countries</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="prop : ${propertiesList}">
+            <td th:text="${prop.id}"></td>
+            <td th:text="${prop.seriesInfoMaxInflight}"></td>
+            <td th:text="${prop.batchSize}"></td>
+            <td th:text="${prop.maxRetries}"></td>
+            <td th:text="${prop.includedCountries}"></td>
+            <td>
+                <a th:href="@{'/admin/properties/edit/' + ${prop.id}}" class="btn btn-sm btn-secondary">Edit</a>
+                <form th:action="@{'/admin/properties/delete/' + ${prop.id}}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this record?');">Delete</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
 
 </body>
 </html>

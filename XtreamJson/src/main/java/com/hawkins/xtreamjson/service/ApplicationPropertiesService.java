@@ -35,6 +35,7 @@ public class ApplicationPropertiesService {
             existing.setSeriesInfoMaxInflight(updated.getSeriesInfoMaxInflight());
             existing.setBatchSize(updated.getBatchSize());
             existing.setMaxRetries(updated.getMaxRetries());
+            existing.setIncludedCountries(updated.getIncludedCountries());
             return repository.save(existing);
         } else {
             return repository.save(updated);

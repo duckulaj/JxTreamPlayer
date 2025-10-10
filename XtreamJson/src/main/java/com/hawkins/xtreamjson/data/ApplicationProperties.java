@@ -14,6 +14,7 @@ public class ApplicationProperties {
     private int seriesInfoMaxInflight = 8;
     private int batchSize = 500;
     private int maxRetries = 5;
+    private String includedCountries = "EN,UK";
 
     // Getters and setters
     public Long getId() { return id; }
@@ -27,4 +28,7 @@ public class ApplicationProperties {
 
     public int getMaxRetries() { return maxRetries; }
     public void setMaxRetries(int v) { this.maxRetries = v; }
+    
+    public String getIncludedCountries() { return includedCountries; }
+    public void setIncludedCountries(String v) { this.includedCountries = v; }
 }
