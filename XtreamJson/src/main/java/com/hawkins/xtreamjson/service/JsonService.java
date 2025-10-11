@@ -3,7 +3,6 @@ package com.hawkins.xtreamjson.service;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -24,7 +23,6 @@ import java.util.function.Consumer;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -470,38 +468,7 @@ public class JsonService {
 			connection.disconnect();
 		}
 	}
-
-	// --- Legacy utility methods (kept if other callers still use them) ---
-	public static <T> List<T> readListFromFile(String filePath, Class<T> clazz) {
-		try {
-			return objectMapper.readValue(
-					Paths.get(filePath).toFile(),
-					objectMapper.getTypeFactory().constructCollectionType(List.class, clazz)
-			);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return java.util.Collections.emptyList();
-		}
-	}
-
-	public static <T, R extends JpaRepository<T, ?>> void persistList(R repository, List<T> entities) {
-		repository.saveAll(entities);
-	}
-
-	public List<MovieCategory> getAllMovieCategories() {
-        java.util.Set<String> includedSet = getIncludedCountriesSet();
-        return movieCategoryRepository.findAll().stream()
-            .filter(cat -> isIncluded(cat.getCategoryName(), includedSet))
-            .toList();
-    }
-
-    public List<MovieStream> getMoviesByCategory(String categoryId) {
-        java.util.Set<String> includedSet = getIncludedCountriesSet();
-        return movieStreamRepository.findByCategoryId(categoryId).stream()
-            .filter(m -> isIncluded(m.getName(), includedSet))
-            .toList();
-    }
-
+	
     public Page<MovieStream> getMoviesByCategory(String categoryId, int page, int size, String letter) {
         java.util.Set<String> includedSet = getIncludedCountriesSet();
         CompletableFuture<Page<MovieStream>> future = CompletableFuture.supplyAsync(() -> {
@@ -561,6 +528,20 @@ public class JsonService {
         java.util.Set<String> includedSet = getIncludedCountriesSet();
         return liveStreamRepository.findByCategoryId(categoryId).stream()
             .filter(s -> isIncluded(s.getName(), includedSet))
+            .toList();
+    }
+    
+    public List<MovieCategory> getAllMovieCategories() {
+        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        return movieCategoryRepository.findAll().stream()
+            .filter(cat -> isIncluded(cat.getCategoryName(), includedSet))
+            .toList();
+    }
+
+    public List<MovieStream> getMoviesByCategory(String categoryId) {
+        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        return movieStreamRepository.findByCategoryId(categoryId).stream()
+            .filter(m -> isIncluded(m.getName(), includedSet))
             .toList();
     }
 
@@ -640,7 +621,12 @@ public class JsonService {
     // Helper to check if a name matches includedCountries
     private boolean isIncluded(String name, java.util.Set<String> includedSet) {
         if (name == null || name.isEmpty() || includedSet.isEmpty()) return false;
-        String first = name.substring(0, 1).toUpperCase();
-        return includedSet.contains(first);
+        String upperName = name.toUpperCase();
+        for (String prefix : includedSet) {
+            if (upperName.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

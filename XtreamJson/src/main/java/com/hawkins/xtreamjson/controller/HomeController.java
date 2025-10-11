@@ -96,10 +96,10 @@ public class HomeController {
 
     @GetMapping("/liveCategoriesDropdown")
     public String liveCategoriesDropdown(Model model) {
-        if (providerService.getSelectedProvider().isEmpty()) {
+    	if (providerService.getSelectedProvider().isEmpty()) {
             return "redirect:/providers";
         }
-        model.addAttribute("categories", liveCategoryRepository.findAll());
+        model.addAttribute("categories", jsonService.getAllLiveCategories());
         return "fragments/liveCategoriesDropdown :: live-categories-dropdown";
     }
 
