@@ -252,7 +252,7 @@ public class HomeController {
     @GetMapping("/createStreams")
     public String createStreams(Model model) {
         try {
-            strmService.generateStrmFiles();
+            strmService.generateAllStrmFiles();
             model.addAttribute("streamStatus", "Movie stream folders and .strm files created successfully.");
         } catch (Exception e) {
             logger.error("Error generating .strm files", e);

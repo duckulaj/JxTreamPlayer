@@ -19,11 +19,17 @@ public class PlaylistController {
     }
 
     @GetMapping(value = "/playlist.m3u8", produces = MediaType.TEXT_PLAIN_VALUE)
-    public ResponseEntity<String> getPlaylist() {
+    public String getPlaylist() {
         String playlistContent = playlistService.generateFullLibraryPlaylist();
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"playlist.m3u8\"")
-                .body(playlistContent);
+        // Write playlistContent to a file
+        try {
+            java.nio.file.Files.write(java.nio.file.Paths.get("playlist.m3u8"), playlistContent.getBytes());
+        } catch (java.io.IOException e) {
+            // Optionally log or handle the error
+            e.printStackTrace();
+        }
+
+        return "home";
     }
 }

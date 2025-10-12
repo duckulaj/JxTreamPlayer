@@ -15,6 +15,12 @@ import com.hawkins.xtreamjson.annotations.TrackExecutionTime;
 import com.hawkins.xtreamjson.data.MovieStream;
 import com.hawkins.xtreamjson.repository.MovieStreamRepository;
 import com.hawkins.xtreamjson.util.StreamUrlHelper;
+import com.hawkins.xtreamjson.data.Series;
+import com.hawkins.xtreamjson.data.Season;
+import com.hawkins.xtreamjson.data.Episode;
+import com.hawkins.xtreamjson.repository.SeriesRepository;
+import com.hawkins.xtreamjson.repository.SeasonRepository;
+import com.hawkins.xtreamjson.repository.EpisodeRepository;
 
 @Service
 public class StrmService {
@@ -29,8 +35,20 @@ public class StrmService {
     @Autowired
     private ApplicationPropertiesService applicationPropertiesService;
 
+    @Autowired
+    private SeriesRepository seriesRepository;
+    @Autowired
+    private SeasonRepository seasonRepository;
+    @Autowired
+    private EpisodeRepository episodeRepository;
+
+    public void generateAllStrmFiles() throws IOException {
+		generateMovieFolders();
+		generateShowFolders();
+	}
+    
     @TrackExecutionTime
-    public void generateStrmFiles() throws IOException {
+    public void generateMovieFolders() throws IOException {
     	var selectedProviderOpt = providerService.getSelectedProvider();
         if (selectedProviderOpt.isEmpty()) {
             throw new IllegalStateException("No IPTV provider selected.");
@@ -68,6 +86,59 @@ public class StrmService {
         }
     }
 
+    public void generateShowFolders() throws IOException {
+        final String SHOWS_DIR = "Shows";
+        Path showsPath = Paths.get(SHOWS_DIR);
+        if (!Files.exists(showsPath)) {
+            Files.createDirectory(showsPath);
+        }
+        
+     // Get included countries set
+        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        
+        List<Series> seriesList = seriesRepository.findAll().stream()
+                .filter(series -> titleIncludesCountry(series.getName(), includedSet))
+                .toList();
+        // List<Series> seriesList = seriesRepository.findAll();
+        for (Series series : seriesList) {
+            
+            String seriesFolderName = sanitizeFileName(series.getName(), null, null);
+
+            Path seriesPath = showsPath.resolve(seriesFolderName);
+            if (!Files.exists(seriesPath)) {
+                Files.createDirectory(seriesPath);
+            }
+            // Get all seasons for this series
+            List<Season> seasons = seasonRepository.findBySeriesId(String.valueOf(series.getSeriesId()));
+            for (Season season : seasons) {
+                String seasonFolderName = "Season " + season.getSeasonNumber();
+                Path seasonPath = seriesPath.resolve(seasonFolderName);
+                if (!Files.exists(seasonPath)) {
+                    Files.createDirectory(seasonPath);
+                }
+                // Get all episodes for this season
+                List<Episode> episodes = episodeRepository.findBySeriesIdAndSeasonId(String.valueOf(series.getSeriesId()), season.getSeasonId());
+                for (Episode episode : episodes) {
+                    String episodeNum = padNumber(episode.getEpisodeNum(), 2);
+                    String seasonNum = padNumber(String.valueOf(season.getSeasonNumber()), 2);
+                    String episodeTitle = sanitizeFileName(episode.getName(), null, null);
+                    String fileName = String.format("%s%s S%sE%s %s.strm",
+                        seriesFolderName,
+                        "",
+                        seasonNum,
+                        episodeNum,
+                        episodeTitle
+                    );
+                    Path episodeFile = seasonPath.resolve(fileName);
+                    // Write directSource to the .strm file
+                    try (BufferedWriter writer = new BufferedWriter(new FileWriter(episodeFile.toFile(), false))) {
+                        writer.write(episode.getDirectSource() != null ? episode.getDirectSource() : "");
+                    }
+                }
+            }
+        }
+    }
+
     private java.util.Set<String> getIncludedCountriesSet() {
         String included = applicationPropertiesService.getCurrentProperties().getIncludedCountries();
         if (included == null || included.isBlank()) return java.util.Collections.emptySet();
@@ -90,20 +161,32 @@ public class StrmService {
         return false;
     }
 
+    private String extractYear(String releaseDate) {
+        if (releaseDate == null) return null;
+        // Try to extract 4-digit year
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d{4})").matcher(releaseDate);
+        return m.find() ? m.group(1) : null;
+    }
+
+    private String padNumber(String num, int length) {
+        if (num == null) return "00";
+        try {
+            int n = Integer.parseInt(num.replaceAll("\\D", ""));
+            return String.format("%0" + length + "d", n);
+        } catch (Exception e) {
+            return "00";
+        }
+    }
+
     private String sanitizeFileName(String name, java.util.Set<String> includedSet, String tmdb) {
-        if (name == null) return "unknown";
-        String result = name;
-        if (includedSet != null && !includedSet.isEmpty()) {
-            // Build regex: e.g. ^(4K-)?(EN|NF|US) - \s*
-            String countryPattern = String.join("|", includedSet);
-            String regex = "^(?:[A-Z0-9]+-)?(" + countryPattern + ") - ";
-            result = result.replaceFirst(regex, "");
-        }
-        // Remove or replace characters not allowed in file/folder names
-        result = result.replaceAll("[\\/:*?\"<>|]", "_").trim();
+        if (name == null) return "Unknown";
+        // Remove illegal characters for file/folder names
+        String safe = name.replaceAll("[\\\\/:*?\"<>|]", "_");
+        safe = safe.replaceAll("[\n\r]", " ").trim();
+        // Optionally add TMDB id if present
         if (tmdb != null && !tmdb.isBlank()) {
-            result += " [tmdbid-" + tmdb + "]";
+            safe += " [tmdbid-" + tmdb + "]";
         }
-        return result;
+        return safe;
     }
 }
