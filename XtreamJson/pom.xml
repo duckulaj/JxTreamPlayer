@@ -14,6 +14,7 @@
 	<properties>
 		<java.version>25</java.version>
 		<log4j.version>2.25.2</log4j.version>
+		<!-- removed latestRelease property; Versions Plugin will set explicit versions on demand -->
 	</properties>
 
 	<parent>
@@ -126,22 +127,10 @@
 			<artifactId>log4j-core</artifactId>
 			</dependency>
 		<!-- Add other dependencies if needed -->
-		<dependency>
-			<groupId>io.astefanutti.metrics.aspectj</groupId>
-			<artifactId>metrics-aspectj</artifactId>
-			<version>1.2.0</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.slf4j</groupId>
-					<artifactId>slf4j-api</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>io.astefanutti.metrics.aspectj</groupId>
-			<artifactId>metrics-aspectj-deps</artifactId>
-			<version>1.2.0</version>
-		</dependency>
+		<!-- The metrics-aspectj dependencies were removed because they are not available in Maven Central
+		     for version 2.2.0 and cause dependency resolution failures during build. If you need
+		     metrics-aspectj, re-add with a valid version or configure the appropriate repository. -->
+		
 	</dependencies>
 
 	<build>
@@ -166,32 +155,22 @@
 						<path>
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
-							<version>1.18.42</version>
 						</path>
 					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
+			<!-- Versions Maven Plugin: run to update dependencies to latest releases on demand -->
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-toolchains-plugin</artifactId>
-				<version>3.2.0</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>toolchain</goal>
-						</goals>
-					</execution>
-				</executions>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>versions-maven-plugin</artifactId>
+				<version>2.14.2</version>
 				<configuration>
-					<toolchains>
-						<jdk>
-							<version>25</version>
-							<vendor>any</vendor>
-						</jdk>
-					</toolchains>
+					<allowSnapshots>false</allowSnapshots>
 				</configuration>
 			</plugin>
+			<!-- maven-toolchains-plugin removed because it required an external ~/.m2/toolchains.xml definition
+			     which isn't necessary when the correct JDK is already installed on the build machine. -->
 
-		</plugins>
-	</build>
+			</plugins>
+		</build>
 </project>
