@@ -86,6 +86,9 @@
     <div id="movie-category-items"></div>
     <div id="providers-container"></div>
     <div id="admin-properties-container"></div>
+
+    <!-- Log Content Container -->
+    <div id="home-log-content"></div>
 </div>
 
 <div th:replace="~{fragments/resetDatabaseModal :: resetDatabaseModal}"></div>
@@ -98,15 +101,27 @@
     xhr: null,
     modal: null,
     init: function() {
-      this.modal = new bootstrap.Modal(document.getElementById('resetDatabaseModal'));
-      document.querySelector('[data-bs-target="#resetDatabaseModal"]').addEventListener('click', () => {
-        document.getElementById('resetDatabaseModalMessage').textContent = 'Updating database, please wait...';
-        document.getElementById('cancelResetDatabaseBtn').disabled = false;
-        this.startReset();
-      });
-      document.getElementById('cancelResetDatabaseBtn').addEventListener('click', () => {
-        this.cancelReset();
-      });
+      const modalElement = document.getElementById('resetDatabaseModal');
+      if (modalElement) {
+        this.modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+      }
+      const openBtn = document.querySelector('[data-bs-target="#resetDatabaseModal"]');
+      if (openBtn) {
+        openBtn.addEventListener('click', () => {
+          document.getElementById('resetDatabaseModalMessage').textContent = 'Updating database, please wait...';
+          document.getElementById('cancelResetDatabaseBtn').disabled = false;
+          this.startReset();
+          if (this.modal) {
+            this.modal.show();
+          }
+        });
+      }
+      const cancelBtn = document.getElementById('cancelResetDatabaseBtn');
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+          this.cancelReset();
+        });
+      }
     },
     startReset: function() {
       this.xhr = new XMLHttpRequest();
@@ -143,7 +158,7 @@
       if (this.modal) {
         this.modal.hide();
       }
-      document.getElementById('reset-status').innerHTML = '<div class="alert alert-info">Cancelling database update...</div>';
+      document.getElementById('reset-status').innerHTML = '<div class="alert alert-info">Cancelling database update...';
       // Send cancel request to backend
       var xhrCancel = new XMLHttpRequest();
       xhrCancel.open('GET', '/cancelResetDatabase', true);

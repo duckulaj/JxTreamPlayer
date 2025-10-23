@@ -470,11 +470,11 @@ public class JsonService {
 	}
 	
     public Page<MovieStream> getMoviesByCategory(String categoryId, int page, int size, String letter) {
-        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet();
         CompletableFuture<Page<MovieStream>> future = CompletableFuture.supplyAsync(() -> {
             List<MovieStream> movies = movieStreamRepository.findByCategoryId(categoryId);
             movies = movies.stream()
-                .filter(m -> isIncluded(m.getName(), includedSet))
+                .filter(m -> XtreamCodesUtils.isIncluded(m.getName(), includedSet))
                 .toList();
             if (letter != null && !letter.isEmpty()) {
                 movies = movies.stream()
@@ -502,7 +502,7 @@ public class JsonService {
     }
 
     public List<String> getAvailableStartingLetters(String categoryId) {
-        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet();
         List<MovieStream> movies = movieStreamRepository.findByCategoryId(categoryId);
         java.util.Set<String> letters = new java.util.TreeSet<>();
         for (MovieStream movie : movies) {
@@ -518,52 +518,52 @@ public class JsonService {
     }
 
     public List<LiveCategory> getAllLiveCategories() {
-        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet();
         return liveCategoryRepository.findAll().stream()
-            .filter(cat -> isIncluded(cat.getCategoryName(), includedSet))
+            .filter(cat -> XtreamCodesUtils.isIncluded(cat.getCategoryName(), includedSet))
             .toList();
     }
 
     public List<LiveStream> getLiveStreamsByCategory(String categoryId) {
-        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet();
         return liveStreamRepository.findByCategoryId(categoryId).stream()
-            .filter(s -> isIncluded(s.getName(), includedSet))
+            .filter(s -> XtreamCodesUtils.isIncluded(s.getName(), includedSet))
             .toList();
     }
     
     public List<MovieCategory> getAllMovieCategories() {
-        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet();
         return movieCategoryRepository.findAll().stream()
-            .filter(cat -> isIncluded(cat.getCategoryName(), includedSet))
+            .filter(cat -> XtreamCodesUtils.isIncluded(cat.getCategoryName(), includedSet))
             .toList();
     }
 
     public List<MovieStream> getMoviesByCategory(String categoryId) {
-        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet();
         return movieStreamRepository.findByCategoryId(categoryId).stream()
-            .filter(m -> isIncluded(m.getName(), includedSet))
+            .filter(m -> XtreamCodesUtils.isIncluded(m.getName(), includedSet))
             .toList();
     }
 
     public List<SeriesCategory> getAllSeriesCategories() {
-        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet();
         return seriesCategoryRepository.findAll().stream()
-            .filter(cat -> isIncluded(cat.getCategoryName(), includedSet))
+            .filter(cat -> XtreamCodesUtils.isIncluded(cat.getCategoryName(), includedSet))
             .toList();
     }
 
     public List<Series> getSeriesByCategory(String categoryId) {
-        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet();
         return seriesRepository.findByCategoryId(categoryId).stream()
-            .filter(s -> isIncluded(s.getName(), includedSet))
+            .filter(s -> XtreamCodesUtils.isIncluded(s.getName(), includedSet))
             .toList();
     }
 
     public org.springframework.data.domain.Page<Series> getSeriesByCategory(String categoryId, int page, int size, String letter) {
-        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet();
         java.util.List<Series> seriesList = seriesRepository.findByCategoryId(categoryId);
         seriesList = seriesList.stream()
-                .filter(s -> isIncluded(s.getName(), includedSet))
+                .filter(s -> XtreamCodesUtils.isIncluded(s.getName(), includedSet))
                 .toList();
         if (letter != null && !letter.isEmpty()) {
             seriesList = seriesList.stream()
@@ -583,7 +583,7 @@ public class JsonService {
     }
 
     public java.util.List<String> getAvailableSeriesStartingLetters(String categoryId) {
-        java.util.Set<String> includedSet = getIncludedCountriesSet();
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet();
         java.util.List<Series> seriesList = seriesRepository.findByCategoryId(categoryId);
         java.util.Set<String> letters = new java.util.TreeSet<>();
         for (Series s : seriesList) {
@@ -606,27 +606,5 @@ public class JsonService {
 		return episodeRepository.findBySeasonId(seasonId);
 	}
 
-    // Helper to get includedCountries as a Set<String>
-    private java.util.Set<String> getIncludedCountriesSet() {
-        String included = applicationPropertiesService.getCurrentProperties().getIncludedCountries();
-        if (included == null || included.isBlank()) return java.util.Collections.emptySet();
-        java.util.Set<String> set = new java.util.HashSet<>();
-        for (String s : included.split(",")) {
-            String trimmed = s.trim();
-            if (!trimmed.isEmpty()) set.add(trimmed.toUpperCase());
-        }
-        return set;
-    }
-
-    // Helper to check if a name matches includedCountries
-    private boolean isIncluded(String name, java.util.Set<String> includedSet) {
-        if (name == null || name.isEmpty() || includedSet.isEmpty()) return false;
-        String upperName = name.toUpperCase();
-        for (String prefix : includedSet) {
-            if (upperName.startsWith(prefix)) {
-                return true;
-            }
-        }
-        return false;
-    }
+    
 }

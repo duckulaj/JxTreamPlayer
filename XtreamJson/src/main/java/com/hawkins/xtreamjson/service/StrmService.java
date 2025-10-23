@@ -12,15 +12,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.hawkins.xtreamjson.annotations.TrackExecutionTime;
-import com.hawkins.xtreamjson.data.MovieStream;
-import com.hawkins.xtreamjson.repository.MovieStreamRepository;
-import com.hawkins.xtreamjson.util.StreamUrlHelper;
-import com.hawkins.xtreamjson.data.Series;
-import com.hawkins.xtreamjson.data.Season;
 import com.hawkins.xtreamjson.data.Episode;
-import com.hawkins.xtreamjson.repository.SeriesRepository;
-import com.hawkins.xtreamjson.repository.SeasonRepository;
+import com.hawkins.xtreamjson.data.MovieStream;
+import com.hawkins.xtreamjson.data.Season;
+import com.hawkins.xtreamjson.data.Series;
 import com.hawkins.xtreamjson.repository.EpisodeRepository;
+import com.hawkins.xtreamjson.repository.MovieStreamRepository;
+import com.hawkins.xtreamjson.repository.SeasonRepository;
+import com.hawkins.xtreamjson.repository.SeriesRepository;
+import com.hawkins.xtreamjson.util.StreamUrlHelper;
 
 @Service
 public class StrmService {

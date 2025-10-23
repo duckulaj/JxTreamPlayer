@@ -34,3 +34,7 @@ Thumbs.db
 # Log files
 *.log
 logs/
+/Movies/
+/Shows/
+/playlist.m3u8
+/src/

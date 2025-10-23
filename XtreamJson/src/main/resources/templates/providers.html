@@ -1,7 +1,4 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <title>IPTV Providers</title>
+<div th:fragment="providersFragment">
     <style>
         .selected-provider {
             background-color: #d0ffd0;
@@ -75,9 +72,6 @@
                 });
         }
     </script>
-</head>
-<body>
-<div th:fragment="providersFragment">
     <h1 class="providers-title">IPTV Providers</h1>
     <table class="providers-table" border="1">
         <thead>
@@ -115,5 +109,3 @@
         <a href="/providers">Cancel</a>
     </form>
 </div>
-</body>
-</html>

@@ -10,16 +10,6 @@
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 <h2>Application Properties</h2>
 
-<!-- View Log Button -->
-<div class="mb-3">
-    <button class="btn btn-info" 
-            hx-get="/admin/viewLog" 
-            hx-target="#admin-content" 
-            hx-swap="innerHTML">
-        View Log
-    </button>
-</div>
-
 <!-- Main Content Container -->
 <div id="admin-content">
     <div class="mb-3">
