@@ -1,5 +1,6 @@
 package com.hawkins.xtreamjson.controller;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,13 +26,17 @@ import com.hawkins.xtreamjson.repository.SeriesCategoryRepository;
 import com.hawkins.xtreamjson.repository.SeriesRepository;
 import com.hawkins.xtreamjson.service.IptvProviderService;
 import com.hawkins.xtreamjson.service.JsonService;
+import com.hawkins.xtreamjson.service.PlaylistService;
 import com.hawkins.xtreamjson.service.StrmService;
 import com.hawkins.xtreamjson.util.StreamUrlHelper;
+import com.hawkins.xtreamjson.util.XtreamCodesUtils;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Controller
+@Slf4j
 public class HomeController {
     private final JsonService jsonService;
-    private final LiveCategoryRepository liveCategoryRepository;
     private final LiveStreamRepository liveStreamRepository;
     private final IptvProviderService providerService;
     private final SeriesCategoryRepository seriesCategoryRepository;
@@ -39,15 +44,15 @@ public class HomeController {
     private final SeasonRepository seasonRepository;
     private final EpisodeRepository episodeRepository;
     private final StrmService strmService;
+    private final PlaylistService playlistService;
 
     private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
     private static final ExecutorService resetExecutor = Executors.newSingleThreadExecutor();
     private static final AtomicReference<Future<?>> resetFutureRef = new AtomicReference<>();
 
     
-    public HomeController(JsonService jsonService, LiveCategoryRepository liveCategoryRepository, LiveStreamRepository liveStreamRepository, IptvProviderService providerService, SeriesCategoryRepository seriesCategoryRepository, SeriesRepository seriesRepository, SeasonRepository seasonRepository, EpisodeRepository episodeRepository, StrmService strmService) {
+    public HomeController(JsonService jsonService, LiveCategoryRepository liveCategoryRepository, LiveStreamRepository liveStreamRepository, IptvProviderService providerService, SeriesCategoryRepository seriesCategoryRepository, SeriesRepository seriesRepository, SeasonRepository seasonRepository, EpisodeRepository episodeRepository, StrmService strmService, PlaylistService playlistService) {
         this.jsonService = jsonService;
-        this.liveCategoryRepository = liveCategoryRepository;
         this.liveStreamRepository = liveStreamRepository;
         this.providerService = providerService;
         this.seriesCategoryRepository = seriesCategoryRepository;
@@ -55,6 +60,8 @@ public class HomeController {
         this.seasonRepository = seasonRepository;
         this.episodeRepository = episodeRepository;
         this.strmService = strmService;
+        this.playlistService = playlistService;
+        
     }
 
     @GetMapping("/")
@@ -260,5 +267,24 @@ public class HomeController {
         }
         // return "fragments/resetStatus :: status";
         return "home";
+    }
+    
+    
+    @GetMapping("/admin/runScheduledTask")
+    public void runScheduledTask() {
+                
+        jsonService.retreiveJsonData();
+		log.info("Scheduled Task retreiveJsonData completed at {}", XtreamCodesUtils.printNow());
+		
+		try {
+			strmService.generateAllStrmFiles();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		log.info("Scheduled Task generateAllStrmFiles completed at {}", XtreamCodesUtils.printNow());
+		
+		playlistService.generateFullLibraryPlaylist();
+		log.info("Scheduled Task generateFullLibraryPlaylist completed at {}", XtreamCodesUtils.printNow());
     }
 }

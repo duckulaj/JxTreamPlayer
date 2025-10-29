@@ -1,6 +1,7 @@
 package com.hawkins.xtreamjson.util;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import com.hawkins.xtreamjson.service.ApplicationPropertiesService;
 
@@ -11,9 +12,6 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class XtreamCodesUtils {
-
-	@Autowired
-	static ApplicationPropertiesService applicationPropertiesService;
 
     /**
      * Sanitizes a string for safe use as a file or directory name.
@@ -103,8 +101,8 @@ public class XtreamCodesUtils {
         return name.trim();
     }
 
- // Helper to get includedCountries as a Set<String>
-    public static java.util.Set<String> getIncludedCountriesSet() {
+    // Helper to get includedCountries as a Set<String>
+    public static java.util.Set<String> getIncludedCountriesSet(ApplicationPropertiesService applicationPropertiesService) {
         String included = applicationPropertiesService.getCurrentProperties().getIncludedCountries();
         if (included == null || included.isBlank()) return java.util.Collections.emptySet();
         java.util.Set<String> set = new java.util.HashSet<>();
@@ -125,5 +123,11 @@ public class XtreamCodesUtils {
             }
         }
         return false;
+    }
+    
+    public static String printNow() {
+        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        Date date = new Date();
+        return formatter.format(date);
     }
 }

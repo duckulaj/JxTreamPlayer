@@ -12,6 +12,7 @@ import com.hawkins.xtreamjson.data.LiveCategory;
 import com.hawkins.xtreamjson.data.LiveStream;
 import com.hawkins.xtreamjson.repository.LiveCategoryRepository;
 import com.hawkins.xtreamjson.repository.LiveStreamRepository;
+import com.hawkins.xtreamjson.util.XtreamCodesUtils;
 
 @Service
 public class PlaylistService {
@@ -26,13 +27,17 @@ public class PlaylistService {
         this.applicationPropertiesService = applicationPropertiesService;
     }
 
-    public String generateFullLibraryPlaylist() {
+    public void generateFullLibraryPlaylist() {
         StringBuilder playlist = new StringBuilder("#EXTM3U\n");
         AtomicInteger counter = new AtomicInteger(1);
 
-        // Fetch all live categories
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet(applicationPropertiesService);
+        
+        // Fetch all categories, filter by included countries, and sort
+        
         List<LiveCategory> categories = liveCategoryRepository.findAll()
                 .stream()
+                .filter(cat -> XtreamCodesUtils.isIncluded(cat.getCategoryName(), includedSet))
                 .sorted(Comparator.comparing(LiveCategory::getCategoryName, String.CASE_INSENSITIVE_ORDER))
                 .collect(Collectors.toList());
 
@@ -47,7 +52,7 @@ public class PlaylistService {
                 int index = counter.getAndIncrement();
                 String displayTitle = String.format("(%03d) [%s] %s", index, category.getCategoryName(), stream.getName());
                 playlist.append("#EXTINF:-1 ")
-                        .append("tvg-id=\"").append(stream.getEpgChannelId() != null ? stream.getEpgChannelId() : "").append("\" ")
+                        .append("tvg-id=\"").append(stream.getEpgChannelId()).append("\" ")
                         .append("tvg-name=\"").append(stream.getName()).append("\" ")
                         .append("tvg-logo=\"").append(stream.getStreamIcon() != null ? stream.getStreamIcon() : "").append("\" ")
                         .append("group-title=\"").append(category.getCategoryName()).append("\", ")
@@ -57,6 +62,14 @@ public class PlaylistService {
                         .append("\n");
             }
         }
-        return playlist.toString();
+        
+     // Write playlistContent to a file
+        try {
+            java.nio.file.Files.write(java.nio.file.Paths.get("playlist.m3u8"), playlist.toString().getBytes());
+        } catch (java.io.IOException e) {
+            // Optionally log or handle the error
+            e.printStackTrace();
+        }
+        
     }
 }

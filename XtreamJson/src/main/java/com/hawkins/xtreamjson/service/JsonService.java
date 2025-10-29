@@ -48,6 +48,7 @@ import com.hawkins.xtreamjson.repository.SeasonRepository;
 import com.hawkins.xtreamjson.repository.SeriesCategoryRepository;
 import com.hawkins.xtreamjson.repository.SeriesRepository;
 import com.hawkins.xtreamjson.util.Constants;
+import com.hawkins.xtreamjson.util.StreamUrlHelper;
 import com.hawkins.xtreamjson.util.XstreamCredentials;
 import com.hawkins.xtreamjson.util.XtreamCodesUtils;
 
@@ -168,6 +169,11 @@ public class JsonService {
 	                }
 	                if (streams.is2xx() && streams.body != null) {
 	                    List<LiveStream> list = liveStreamReader.readValue(streams.body);
+	                    // Set directSource for each LiveStream using StreamUrlHelper
+	                    for (LiveStream stream : list) {
+	                        String directSourceUrl = StreamUrlHelper.buildLiveUrl(p.getApiUrl(), p.getUsername(), p.getPassword(), stream);
+	                        stream.setDirectSource(directSourceUrl);
+	                    }
 	                    liveStreamRepository.saveAll(list);
 	                    log.info("Live Streams: {}", list.size());
 	                }
@@ -470,7 +476,7 @@ public class JsonService {
 	}
 	
     public Page<MovieStream> getMoviesByCategory(String categoryId, int page, int size, String letter) {
-        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet();
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet(applicationPropertiesService);
         CompletableFuture<Page<MovieStream>> future = CompletableFuture.supplyAsync(() -> {
             List<MovieStream> movies = movieStreamRepository.findByCategoryId(categoryId);
             movies = movies.stream()
@@ -502,7 +508,7 @@ public class JsonService {
     }
 
     public List<String> getAvailableStartingLetters(String categoryId) {
-        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet();
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet(applicationPropertiesService);
         List<MovieStream> movies = movieStreamRepository.findByCategoryId(categoryId);
         java.util.Set<String> letters = new java.util.TreeSet<>();
         for (MovieStream movie : movies) {
@@ -518,49 +524,49 @@ public class JsonService {
     }
 
     public List<LiveCategory> getAllLiveCategories() {
-        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet();
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet(applicationPropertiesService);
         return liveCategoryRepository.findAll().stream()
             .filter(cat -> XtreamCodesUtils.isIncluded(cat.getCategoryName(), includedSet))
             .toList();
     }
 
     public List<LiveStream> getLiveStreamsByCategory(String categoryId) {
-        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet();
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet(applicationPropertiesService);
         return liveStreamRepository.findByCategoryId(categoryId).stream()
             .filter(s -> XtreamCodesUtils.isIncluded(s.getName(), includedSet))
             .toList();
     }
     
     public List<MovieCategory> getAllMovieCategories() {
-        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet();
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet(applicationPropertiesService);
         return movieCategoryRepository.findAll().stream()
             .filter(cat -> XtreamCodesUtils.isIncluded(cat.getCategoryName(), includedSet))
             .toList();
     }
 
     public List<MovieStream> getMoviesByCategory(String categoryId) {
-        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet();
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet(applicationPropertiesService);
         return movieStreamRepository.findByCategoryId(categoryId).stream()
             .filter(m -> XtreamCodesUtils.isIncluded(m.getName(), includedSet))
             .toList();
     }
 
     public List<SeriesCategory> getAllSeriesCategories() {
-        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet();
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet(applicationPropertiesService);
         return seriesCategoryRepository.findAll().stream()
             .filter(cat -> XtreamCodesUtils.isIncluded(cat.getCategoryName(), includedSet))
             .toList();
     }
 
     public List<Series> getSeriesByCategory(String categoryId) {
-        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet();
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet(applicationPropertiesService);
         return seriesRepository.findByCategoryId(categoryId).stream()
             .filter(s -> XtreamCodesUtils.isIncluded(s.getName(), includedSet))
             .toList();
     }
 
     public org.springframework.data.domain.Page<Series> getSeriesByCategory(String categoryId, int page, int size, String letter) {
-        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet();
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet(applicationPropertiesService);
         java.util.List<Series> seriesList = seriesRepository.findByCategoryId(categoryId);
         seriesList = seriesList.stream()
                 .filter(s -> XtreamCodesUtils.isIncluded(s.getName(), includedSet))
@@ -583,7 +589,7 @@ public class JsonService {
     }
 
     public java.util.List<String> getAvailableSeriesStartingLetters(String categoryId) {
-        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet();
+        java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet(applicationPropertiesService);
         java.util.List<Series> seriesList = seriesRepository.findByCategoryId(categoryId);
         java.util.Set<String> letters = new java.util.TreeSet<>();
         for (Series s : seriesList) {
