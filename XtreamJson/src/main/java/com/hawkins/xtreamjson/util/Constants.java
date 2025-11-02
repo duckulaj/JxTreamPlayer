@@ -14,4 +14,5 @@ public class Constants {
     public static final String SERIES_INFO = "%s/player_api.php?username=%s&password=%s&action=get_series_info&series_id=%s";
     public static final String SHOW_INFO = "%s/player_api.php?username=%s&password=%s&action=get_show&series_id=%s";
     public static final String EPISODES_BY_SEASON = "%s/player_api.php?username=%s&password=%s&action=get_episodes&season_id=%s";
+    public static final String EPG_XML = "%s/xmltv.php?username=%s&password=%s";
 }

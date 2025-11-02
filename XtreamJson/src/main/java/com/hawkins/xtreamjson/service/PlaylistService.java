@@ -33,6 +33,14 @@ public class PlaylistService {
 
         java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet(applicationPropertiesService);
         
+        // Get excluded titles from application properties
+        String excludedTitlesRaw = applicationPropertiesService.getCurrentProperties().getExcludedTitles();
+        java.util.Set<String> excludedTitlesSet = java.util.Arrays.stream(excludedTitlesRaw.split(","))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .map(String::toUpperCase)
+            .collect(java.util.stream.Collectors.toSet());
+        
         // Fetch all categories, filter by included countries, and sort
         
         List<LiveCategory> categories = liveCategoryRepository.findAll()
@@ -49,17 +57,22 @@ public class PlaylistService {
                     .append(category.getCategoryName())
                     .append(" ----\n");
             for (LiveStream stream : streams) {
-                int index = counter.getAndIncrement();
-                String displayTitle = String.format("(%03d) [%s] %s", index, category.getCategoryName(), stream.getName());
-                playlist.append("#EXTINF:-1 ")
-                        .append("tvg-id=\"").append(stream.getEpgChannelId()).append("\" ")
-                        .append("tvg-name=\"").append(stream.getName()).append("\" ")
-                        .append("tvg-logo=\"").append(stream.getStreamIcon() != null ? stream.getStreamIcon() : "").append("\" ")
-                        .append("group-title=\"").append(category.getCategoryName()).append("\", ")
-                        .append(displayTitle)
-                        .append("\n")
-                        .append(stream.getDirectSource())
-                        .append("\n");
+                // Exclude stream if its name contains any excluded title (case-insensitive)
+                String streamNameUpper = stream.getName().toUpperCase();
+                boolean isExcluded = excludedTitlesSet.stream().anyMatch(streamNameUpper::contains);
+                if (!isExcluded) {
+                    int index = counter.getAndIncrement();
+                    String displayTitle = String.format("(%03d) [%s] %s", index, category.getCategoryName(), stream.getName());
+                    playlist.append("#EXTINF:-1 ")
+                            .append("tvg-id=\"").append(stream.getEpgChannelId()).append("\" ")
+                            .append("tvg-name=\"").append(stream.getName()).append("\" ")
+                            .append("tvg-logo=\"").append(stream.getStreamIcon() != null ? stream.getStreamIcon() : "").append("\" ")
+                            .append("group-title=\"").append(category.getCategoryName()).append("\", ")
+                            .append(displayTitle)
+                            .append("\n")
+                            .append(stream.getDirectSource())
+                            .append("\n");
+                }
             }
         }
         

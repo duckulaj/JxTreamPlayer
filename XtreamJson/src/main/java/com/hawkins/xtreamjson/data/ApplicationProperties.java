@@ -15,6 +15,7 @@ public class ApplicationProperties {
     private int batchSize = 500;
     private int maxRetries = 5;
     private String includedCountries = "EN,UK";
+    private String excludedTitles = "";
 
     // Getters and setters
     public Long getId() { return id; }
@@ -31,4 +32,7 @@ public class ApplicationProperties {
     
     public String getIncludedCountries() { return includedCountries; }
     public void setIncludedCountries(String v) { this.includedCountries = v; }
+
+    public String getExcludedTitles() { return excludedTitles; }
+    public void setExcludedTitles(String v) { this.excludedTitles = v; }
 }
