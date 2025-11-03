@@ -151,7 +151,7 @@ public class HomeController {
         if (providerService.getSelectedProvider().isEmpty()) {
             return "redirect:/providers";
         }
-        model.addAttribute("categories", seriesCategoryRepository.findAll());
+        model.addAttribute("categories", jsonService.getAllSeriesCategories());
         return "fragments/seriesCategoriesDropdown :: series-category-dropdown";
     }
 
