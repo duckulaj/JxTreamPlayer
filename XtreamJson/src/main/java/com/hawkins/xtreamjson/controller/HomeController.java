@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.hawkins.xtreamjson.data.LiveStream;
 import com.hawkins.xtreamjson.data.MovieStream;
 import com.hawkins.xtreamjson.data.Series;
+import com.hawkins.xtreamjson.data.SeriesCategory;
 import com.hawkins.xtreamjson.repository.EpisodeRepository;
 import com.hawkins.xtreamjson.repository.LiveCategoryRepository;
 import com.hawkins.xtreamjson.repository.LiveStreamRepository;
@@ -158,7 +159,10 @@ public class HomeController {
         if (providerService.getSelectedProvider().isEmpty()) {
             return "redirect:/providers";
         }
-        model.addAttribute("categories", seriesCategoryRepository.findAll());
+        
+        List<SeriesCategory> categories = jsonService.getAllSeriesCategories();
+        log.info("seriesCategoriesDropdown: found {} categories", categories.size());
+        model.addAttribute("categories", categories);
         return "fragments/seriesCategoriesDropdown :: series-category-dropdown";
     }
 
