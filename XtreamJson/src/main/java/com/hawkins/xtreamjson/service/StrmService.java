@@ -161,13 +161,6 @@ public class StrmService {
         return false;
     }
 
-    private String extractYear(String releaseDate) {
-        if (releaseDate == null) return null;
-        // Try to extract 4-digit year
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d{4})").matcher(releaseDate);
-        return m.find() ? m.group(1) : null;
-    }
-
     private String padNumber(String num, int length) {
         if (num == null) return "00";
         try {

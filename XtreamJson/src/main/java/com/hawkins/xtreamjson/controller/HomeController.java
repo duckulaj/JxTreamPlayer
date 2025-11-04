@@ -23,7 +23,6 @@ import com.hawkins.xtreamjson.repository.EpisodeRepository;
 import com.hawkins.xtreamjson.repository.LiveCategoryRepository;
 import com.hawkins.xtreamjson.repository.LiveStreamRepository;
 import com.hawkins.xtreamjson.repository.SeasonRepository;
-import com.hawkins.xtreamjson.repository.SeriesCategoryRepository;
 import com.hawkins.xtreamjson.repository.SeriesRepository;
 import com.hawkins.xtreamjson.service.IptvProviderService;
 import com.hawkins.xtreamjson.service.JsonService;
@@ -40,7 +39,6 @@ public class HomeController {
     private final JsonService jsonService;
     private final LiveStreamRepository liveStreamRepository;
     private final IptvProviderService providerService;
-    private final SeriesCategoryRepository seriesCategoryRepository;
     private final SeriesRepository seriesRepository;
     private final SeasonRepository seasonRepository;
     private final EpisodeRepository episodeRepository;
@@ -52,11 +50,10 @@ public class HomeController {
     private static final AtomicReference<Future<?>> resetFutureRef = new AtomicReference<>();
 
     
-    public HomeController(JsonService jsonService, LiveCategoryRepository liveCategoryRepository, LiveStreamRepository liveStreamRepository, IptvProviderService providerService, SeriesCategoryRepository seriesCategoryRepository, SeriesRepository seriesRepository, SeasonRepository seasonRepository, EpisodeRepository episodeRepository, StrmService strmService, PlaylistService playlistService) {
+    public HomeController(JsonService jsonService, LiveCategoryRepository liveCategoryRepository, LiveStreamRepository liveStreamRepository, IptvProviderService providerService, SeriesRepository seriesRepository, SeasonRepository seasonRepository, EpisodeRepository episodeRepository, StrmService strmService, PlaylistService playlistService) {
         this.jsonService = jsonService;
         this.liveStreamRepository = liveStreamRepository;
         this.providerService = providerService;
-        this.seriesCategoryRepository = seriesCategoryRepository;
         this.seriesRepository = seriesRepository;
         this.seasonRepository = seasonRepository;
         this.episodeRepository = episodeRepository;
@@ -112,7 +109,7 @@ public class HomeController {
     }
 
     @GetMapping("/liveCategoryItems")
-    public String liveCategoryItems(@RequestParam("categoryId") String categoryId, Model model) {
+    public String liveCategoryItems(@RequestParam String categoryId, Model model) {
         List<LiveStream> items = liveStreamRepository.findByCategoryId(categoryId);
         var credentials = providerService.getSelectedProvider().map(p -> new com.hawkins.xtreamjson.util.XstreamCredentials(p.getApiUrl(), p.getUsername(), p.getPassword())).orElse(new com.hawkins.xtreamjson.util.XstreamCredentials("", "", ""));
         for (var item : items) {
@@ -138,7 +135,7 @@ public class HomeController {
     }
 
     @GetMapping("/movieCategoryItems")
-    public String movieCategoryItems(@RequestParam("categoryId") String categoryId, Model model) {
+    public String movieCategoryItems(@RequestParam String categoryId, Model model) {
         List<MovieStream> movies = jsonService.getMoviesByCategory(categoryId);
         var credentials = providerService.getSelectedProvider().map(p -> new com.hawkins.xtreamjson.util.XstreamCredentials(p.getApiUrl(), p.getUsername(), p.getPassword())).orElse(new com.hawkins.xtreamjson.util.XstreamCredentials("", "", ""));
         for (var movie : movies) {
@@ -167,17 +164,17 @@ public class HomeController {
     }
 
     @GetMapping("/stream.html")
-    public String stream(@RequestParam(value = "url", required = false) String url, Model model) {
+    public String stream(@RequestParam(required = false) String url, Model model) {
         model.addAttribute("url", url);
         return "stream";
     }
 
     @GetMapping("/movieCategoryPage")
     public String movieCategoryPage(
-            @RequestParam("categoryId") String categoryId,
-            @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "20") int size,
-            @RequestParam(value = "letter", required = false) String letter,
+            @RequestParam String categoryId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String letter,
             Model model) {
         var selectedProviderOpt = providerService.getSelectedProvider();
         if (selectedProviderOpt.isEmpty()) {
@@ -206,15 +203,15 @@ public class HomeController {
     }
 
     @GetMapping("/seriesCategoryItems")
-    public String seriesCategoryItems(@RequestParam("categoryId") String categoryId, Model model) {
+    public String seriesCategoryItems(@RequestParam String categoryId, Model model) {
         List<Series> seriesList = seriesRepository.findByCategoryId(categoryId);
         model.addAttribute("series", seriesList);
         return "fragments/seriesCategoryItems :: series-list";
     }
 
     @GetMapping("/seasonsBySeries")
-    public String seasonsBySeries(@RequestParam("seriesId") String seriesId,
-                                  @RequestParam(value = "seriesImage", required = false) String seriesImage,
+    public String seasonsBySeries(@RequestParam String seriesId,
+                                  @RequestParam(required = false) String seriesImage,
                                   Model model) {
         var seasons = seasonRepository.findBySeriesId(seriesId);
         logger.info("[seasonsBySeries] seriesId={}, found {} seasons", seriesId, seasons != null ? seasons.size() : 0);
@@ -226,9 +223,9 @@ public class HomeController {
     }
 
     @GetMapping("/episodesBySeason")
-    public String episodesBySeason(@RequestParam("seriesId") String seriesId,
-                                   @RequestParam("seasonId") String seasonId,
-                                   @RequestParam(value = "seriesImage", required = false) String seriesImage,
+    public String episodesBySeason(@RequestParam String seriesId,
+                                   @RequestParam String seasonId,
+                                   @RequestParam(required = false) String seriesImage,
                                    Model model) {
         var episodes = episodeRepository.findBySeriesIdAndSeasonId(seriesId, seasonId);
         // Use utility method for image selection
@@ -241,10 +238,10 @@ public class HomeController {
 
     @GetMapping("/seriesCategoryPage")
     public String seriesCategoryPage(
-            @RequestParam("categoryId") String categoryId,
-            @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "20") int size,
-            @RequestParam(value = "letter", required = false) String letter,
+            @RequestParam String categoryId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String letter,
             Model model) {
         var selectedProviderOpt = providerService.getSelectedProvider();
         if (selectedProviderOpt.isEmpty()) {
