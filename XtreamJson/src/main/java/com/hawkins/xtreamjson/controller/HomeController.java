@@ -45,7 +45,6 @@ public class HomeController {
     private final StrmService strmService;
     private final PlaylistService playlistService;
 
-    private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
     private static final ExecutorService resetExecutor = Executors.newSingleThreadExecutor();
     private static final AtomicReference<Future<?>> resetFutureRef = new AtomicReference<>();
 
@@ -158,7 +157,7 @@ public class HomeController {
         }
         
         List<SeriesCategory> categories = jsonService.getAllSeriesCategories();
-        log.info("seriesCategoriesDropdown: found {} categories", categories.size());
+        // log.info("seriesCategoriesDropdown: found {} categories", categories.size());
         model.addAttribute("categories", categories);
         return "fragments/seriesCategoriesDropdown :: series-category-dropdown";
     }
@@ -192,7 +191,7 @@ public class HomeController {
             );
             movie.setDirectSource(url);
         }
-        logger.info("movieCategoryPage: categoryId={}, page={}, size={}, letter={}, moviesFound={}", categoryId, page, size, letter, moviePage.getContent().size());
+        // log.info("movieCategoryPage: categoryId={}, page={}, size={}, letter={}, moviesFound={}", categoryId, page, size, letter, moviePage.getContent().size());
         List<String> letters = jsonService.getAvailableStartingLetters(categoryId);
         model.addAttribute("moviePage", moviePage);
         model.addAttribute("letters", letters);
@@ -214,7 +213,7 @@ public class HomeController {
                                   @RequestParam(required = false) String seriesImage,
                                   Model model) {
         var seasons = seasonRepository.findBySeriesId(seriesId);
-        logger.info("[seasonsBySeries] seriesId={}, found {} seasons", seriesId, seasons != null ? seasons.size() : 0);
+        // log.info("[seasonsBySeries] seriesId={}, found {} seasons", seriesId, seasons != null ? seasons.size() : 0);
         // Use utility method for image selection
         seriesImage = com.hawkins.xtreamjson.util.StreamViewUtils.resolveSeriesImage(seriesId, seriesImage, seriesRepository);
         model.addAttribute("seasons", seasons);
@@ -263,7 +262,7 @@ public class HomeController {
             strmService.generateAllStrmFiles();
             model.addAttribute("streamStatus", "Movie stream folders and .strm files created successfully.");
         } catch (Exception e) {
-            logger.error("Error generating .strm files", e);
+            // log.error("Error generating .strm files", e);
             model.addAttribute("streamStatus", "Error creating .strm files: " + e.getMessage());
         }
         // return "fragments/resetStatus :: status";

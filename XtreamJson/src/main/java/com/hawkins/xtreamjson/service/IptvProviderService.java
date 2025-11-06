@@ -43,10 +43,10 @@ public class IptvProviderService {
         repository.deleteById(id);
     }
 
-    @TrackExecutionTime
+    // @TrackExecutionTime
     public Optional<IptvProvider> getSelectedProvider() {
         Optional<IptvProvider> selected = repository.findBySelectedTrue();
-        log.info("getSelectedProvider: {}", selected.map(IptvProvider::getId).orElse(null));
+        // log.info("getSelectedProvider: {}", selected.map(IptvProvider::getId).orElse(null));
         return selected;
     }
 }
