@@ -1,14 +1,11 @@
 package com.hawkins.xtreamjson.controller;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -29,7 +26,6 @@ import com.hawkins.xtreamjson.service.JsonService;
 import com.hawkins.xtreamjson.service.PlaylistService;
 import com.hawkins.xtreamjson.service.StrmService;
 import com.hawkins.xtreamjson.util.StreamUrlHelper;
-import com.hawkins.xtreamjson.util.XtreamCodesUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
