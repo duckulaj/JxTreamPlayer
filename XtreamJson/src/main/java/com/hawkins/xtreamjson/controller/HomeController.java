@@ -268,23 +268,4 @@ public class HomeController {
         // return "fragments/resetStatus :: status";
         return "home";
     }
-    
-    
-    @GetMapping("/admin/runScheduledTask")
-    public void runScheduledTask() {
-                
-        jsonService.retreiveJsonData();
-		log.info("Scheduled Task retreiveJsonData completed at {}", XtreamCodesUtils.printNow());
-		
-		try {
-			strmService.generateAllStrmFiles();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		log.info("Scheduled Task generateAllStrmFiles completed at {}", XtreamCodesUtils.printNow());
-		
-		playlistService.generateFullLibraryPlaylist();
-		log.info("Scheduled Task generateFullLibraryPlaylist completed at {}", XtreamCodesUtils.printNow());
-    }
 }
