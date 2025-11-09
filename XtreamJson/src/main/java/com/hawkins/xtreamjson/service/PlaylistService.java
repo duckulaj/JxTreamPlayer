@@ -14,7 +14,10 @@ import com.hawkins.xtreamjson.repository.LiveCategoryRepository;
 import com.hawkins.xtreamjson.repository.LiveStreamRepository;
 import com.hawkins.xtreamjson.util.XtreamCodesUtils;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class PlaylistService {
 
     private final LiveCategoryRepository liveCategoryRepository;
@@ -28,6 +31,8 @@ public class PlaylistService {
     }
 
     public void generateFullLibraryPlaylist() {
+    	
+    	log.info("Generating full library playlist...");
         StringBuilder playlist = new StringBuilder("#EXTM3U\n");
         AtomicInteger counter = new AtomicInteger(1);
 
@@ -83,6 +88,8 @@ public class PlaylistService {
             // Optionally log or handle the error
             e.printStackTrace();
         }
+        
+        log.info("Full library playlist generated with {} streams.", counter.get() - 1);
         
     }
 }

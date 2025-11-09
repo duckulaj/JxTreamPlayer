@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,10 @@ import com.hawkins.xtreamjson.repository.SeasonRepository;
 import com.hawkins.xtreamjson.repository.SeriesRepository;
 import com.hawkins.xtreamjson.util.StreamUrlHelper;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class StrmService {
     private static final String MOVIES_DIR = "Movies";
 
@@ -42,9 +46,15 @@ public class StrmService {
     @Autowired
     private EpisodeRepository episodeRepository;
 
+    // Create a counter for Movies and Shows generated
+    AtomicInteger movieCounter = new AtomicInteger(0);
+    AtomicInteger showCounter = new AtomicInteger(0);
+    
     public void generateAllStrmFiles() throws IOException {
 		generateMovieFolders();
 		generateShowFolders();
+		log.info("Generated {} movie folders.", movieCounter.get());
+		log.info("Generated {} shows.", showCounter.get());
 	}
     
     @TrackExecutionTime
@@ -83,6 +93,7 @@ public class StrmService {
                     );
                 writer.write(url != null ? url : "");
             }
+            movieCounter.incrementAndGet();
         }
     }
 
@@ -101,6 +112,7 @@ public class StrmService {
                 .toList();
         // List<Series> seriesList = seriesRepository.findAll();
         for (Series series : seriesList) {
+            showCounter.incrementAndGet();
             
             String seriesFolderName = sanitizeFileName(series.getName(), null, null);
 

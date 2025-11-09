@@ -31,6 +31,10 @@
                 <label for="includedCountries" class="form-label">Included Countries</label>
                 <input type="text" class="form-control" id="includedCountries" name="includedCountries" th:field="*{includedCountries}" required>
             </div>
+            <div class="col-md-4">
+                <label for="includedCountries" class="form-label">Exclude from Playlist</label>
+                <input type="text" class="form-control" id="excludedTitles" name="excludedTitles" th:field="*{excludedTitles}" >
+            </div>
             <div class="col-12 mt-3">
                 <button type="submit" class="btn btn-primary">Save</button>
             </div>
@@ -46,6 +50,7 @@
             <th>Batch Size</th>
             <th>Max Retries</th>
             <th>Included Countries</th>
+            <th>Excluded Titles</th>
             <th>Actions</th>
         </tr>
         </thead>
@@ -56,6 +61,7 @@
             <td th:text="${prop.batchSize}"></td>
             <td th:text="${prop.maxRetries}"></td>
             <td th:text="${prop.includedCountries}"></td>
+            <td th:text="${prop.excludedTitles}"></td>
             <td>
                 <a th:href="@{'/admin/properties/edit/' + ${prop.id}}" class="btn btn-sm btn-secondary">Edit</a>
                 <form th:action="@{'/admin/properties/delete/' + ${prop.id}}" method="post" style="display:inline;">
