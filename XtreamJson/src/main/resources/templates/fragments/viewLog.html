@@ -1,7 +1,77 @@
 <!-- fragments/viewLog.html -->
 <div th:fragment="logView">
   <h2>Application Log</h2>
-  <pre style="max-height: 500px; overflow-y: auto; background: #222; color: #eee; padding: 1em; border-radius: 5px; text-align: left;">
-    <span th:text="${logContent}"></span>
+  <pre id="log-pre" style="max-height: 500px; overflow-y: auto; background: #222; color: #eee; padding: 1em; border-radius: 5px; text-align: left;" th:attr="data-last-modified=${lastModified}">
+    <span id="log-content" th:text="${logContent}"></span>
   </pre>
+
+  <script>
+    (function() {
+      // Clean up any previous SSE connection when fragment re-renders
+      if (window._logViewSse) {
+        try { window._logViewSse.close(); } catch (e) {}
+        window._logViewSse = null;
+      }
+
+      const pre = document.getElementById('log-pre');
+      const contentElem = document.getElementById('log-content');
+      if (!pre || !contentElem) return;
+
+      // Scroll to bottom helper
+      function scrollToBottom() {
+        try { pre.scrollTop = pre.scrollHeight; } catch (e) {}
+      }
+
+      // Initial scroll to bottom
+      setTimeout(scrollToBottom, 50);
+
+      // Create SSE connection
+      try {
+        const es = new EventSource('/admin/logStream');
+        window._logViewSse = es;
+
+        es.addEventListener('log', function(e) {
+          // e.data contains full log text
+          contentElem.textContent = e.data || '';
+          // Update last-modified timestamp to now (server-side SSE doesn't send header)
+          pre.dataset.lastModified = String(Date.now());
+          scrollToBottom();
+        });
+
+        es.addEventListener('notfound', function(e) {
+          contentElem.textContent = e.data || 'Log file not found.';
+        });
+
+        es.addEventListener('error', function(e) {
+          // server-sent error event
+          try {
+            // if server sent a message body
+            contentElem.textContent = e.data || 'Error streaming log.';
+          } catch (err) {
+            contentElem.textContent = 'Error streaming log.';
+          }
+        });
+
+        // Fallback for plain message events
+        es.onmessage = function(e) {
+          contentElem.textContent = e.data || '';
+          scrollToBottom();
+        };
+
+        es.onerror = function(ev) {
+          // EventSource auto-reconnects; show transient message
+          // If readyState is CLOSED, try to reopen later
+          if (es.readyState === EventSource.CLOSED) {
+            // closed by server, indicate to user
+            // keep the element content as-is; do not spam
+            console.warn('Log SSE connection closed');
+          }
+        };
+
+      } catch (err) {
+        contentElem.textContent = 'Could not open SSE connection: ' + (err && err.message ? err.message : err);
+      }
+
+    })();
+  </script>
 </div>

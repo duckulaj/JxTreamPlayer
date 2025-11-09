@@ -79,7 +79,8 @@ public class HomeController {
         });
         resetFutureRef.set(future);
         model.addAttribute("resetStatus", "Database reset started. You will be notified when it completes.");
-        return "fragments/resetStatus :: status";
+        // return "fragments/resetStatus :: status";
+        return "home";
     }
 
     @GetMapping("/cancelResetDatabase")
