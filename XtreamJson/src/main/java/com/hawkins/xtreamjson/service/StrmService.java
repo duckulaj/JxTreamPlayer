@@ -75,6 +75,9 @@ public class StrmService {
         List<MovieStream> movies = movieStreamRepository.findAll().stream()
             .filter(movie -> titleIncludesCountry(movie.getName(), includedSet))
             .toList();
+        
+        log.info("Generating .strm files for {} movies matching included countries.", movies.size());
+        
         for (MovieStream movie : movies) {
             String safeName = sanitizeFileName(movie.getName(), includedSet, movie.getTmdb());
             Path movieDir = moviesPath.resolve(safeName);
@@ -111,6 +114,9 @@ public class StrmService {
                 .filter(series -> titleIncludesCountry(series.getName(), includedSet))
                 .toList();
         // List<Series> seriesList = seriesRepository.findAll();
+        
+        log.info("Generating .strm files for {} series matching included countries.", seriesList.size());
+        
         for (Series series : seriesList) {
             showCounter.incrementAndGet();
             
