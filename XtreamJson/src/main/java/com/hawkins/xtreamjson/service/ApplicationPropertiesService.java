@@ -18,7 +18,7 @@ public class ApplicationPropertiesService {
 
     public ApplicationProperties getCurrentProperties() {
         // Always return the first (or create default if none)
-        return repository.findAll().stream().findFirst().orElseGet(() -> {
+        return repository.findTopByOrderByIdAsc().orElseGet(() -> {
             ApplicationProperties props = new ApplicationProperties();
             return repository.save(props);
         });

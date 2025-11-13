@@ -4,6 +4,8 @@ package com.hawkins.xtreamjson.service;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -40,17 +42,24 @@ public class PlaylistService {
         
         // Get excluded titles from application properties
         String excludedTitlesRaw = applicationPropertiesService.getCurrentProperties().getExcludedTitles();
-        java.util.Set<String> excludedTitlesSet = java.util.Arrays.stream(excludedTitlesRaw.split(","))
+        String[] excludedTitlesArr = java.util.Arrays.stream(excludedTitlesRaw.split(","))
             .map(String::trim)
             .filter(s -> !s.isEmpty())
-            .map(String::toUpperCase)
-            .collect(java.util.stream.Collectors.toSet());
-        
+            .toArray(String[]::new);
+        // Build regex pattern for efficient matching
+        String regex = java.util.Arrays.stream(excludedTitlesArr)
+            .map(Pattern::quote)
+            .reduce((a, b) -> a + "|" + b)
+            .orElse("");
+        Pattern excludedPattern = regex.isEmpty() ? null : Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+
         // Fetch all categories, filter by included countries, and sort
-        
-        List<LiveCategory> categories = liveCategoryRepository.findAll()
+        List<String> includedCategoryNames = liveCategoryRepository.findAll().stream()
+            .map(LiveCategory::getCategoryName)
+            .filter(catName -> XtreamCodesUtils.isIncluded(catName, includedSet))
+            .collect(Collectors.toList());
+        List<LiveCategory> categories = liveCategoryRepository.findByCategoryNameIn(includedCategoryNames)
                 .stream()
-                .filter(cat -> XtreamCodesUtils.isIncluded(cat.getCategoryName(), includedSet))
                 .sorted(Comparator.comparing(LiveCategory::getCategoryName, String.CASE_INSENSITIVE_ORDER))
                 .collect(Collectors.toList());
 
@@ -63,8 +72,11 @@ public class PlaylistService {
                     .append(" ----\n");
             for (LiveStream stream : streams) {
                 // Exclude stream if its name contains any excluded title (case-insensitive)
-                String streamNameUpper = stream.getName().toUpperCase();
-                boolean isExcluded = excludedTitlesSet.stream().anyMatch(streamNameUpper::contains);
+                boolean isExcluded = false;
+                if (excludedPattern != null) {
+                    Matcher matcher = excludedPattern.matcher(stream.getName());
+                    isExcluded = matcher.find();
+                }
                 if (!isExcluded) {
                     int index = counter.getAndIncrement();
                     String displayTitle = String.format("(%03d) [%s] %s", index, category.getCategoryName(), stream.getName());
