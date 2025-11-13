@@ -39,13 +39,13 @@ public class HomeController {
     private final SeasonRepository seasonRepository;
     private final EpisodeRepository episodeRepository;
     private final StrmService strmService;
-    private final PlaylistService playlistService;
+    
 
     private static final ExecutorService resetExecutor = Executors.newSingleThreadExecutor();
     private static final AtomicReference<Future<?>> resetFutureRef = new AtomicReference<>();
 
     
-    public HomeController(JsonService jsonService, LiveCategoryRepository liveCategoryRepository, LiveStreamRepository liveStreamRepository, IptvProviderService providerService, SeriesRepository seriesRepository, SeasonRepository seasonRepository, EpisodeRepository episodeRepository, StrmService strmService, PlaylistService playlistService) {
+    public HomeController(JsonService jsonService, LiveCategoryRepository liveCategoryRepository, LiveStreamRepository liveStreamRepository, IptvProviderService providerService, SeriesRepository seriesRepository, SeasonRepository seasonRepository, EpisodeRepository episodeRepository, StrmService strmService) {
         this.jsonService = jsonService;
         this.liveStreamRepository = liveStreamRepository;
         this.providerService = providerService;
@@ -53,8 +53,6 @@ public class HomeController {
         this.seasonRepository = seasonRepository;
         this.episodeRepository = episodeRepository;
         this.strmService = strmService;
-        this.playlistService = playlistService;
-        
     }
 
     @GetMapping("/")
