@@ -1,0 +1,36 @@
+<!-- Fragment for displaying search results for movies and series as compact thumbnails -->
+<div th:fragment="search-results">
+    <div th:if="${movies.size() == 0 and series.size() == 0}" class="p-2 text-center text-muted">No results found.</div>
+
+    <div th:if="${movies.size()} > 0" class="px-2">
+        <div class="px-2 pt-1 pb-1 fw-bold text-success">Movies</div>
+        <div class="d-flex flex-wrap">
+            <div class="me-2 mb-2" th:each="movie : ${movies}" style="width: 160px;">
+                <a th:href="@{/stream.html(url=${movie.directSource})}" style="text-decoration:none;color:inherit;">
+                    <div class="card" style="width:100%;">
+                        <img th:if="${movie.streamIcon} != null" th:src="${movie.streamIcon}" class="card-img-top" style="height:90px;object-fit:cover;" alt="">
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-0" th:text="${movie.name}" style="font-size:0.85rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;"></h6>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${series.size()} > 0" class="px-2 mt-2">
+        <div class="px-2 pt-1 pb-1 fw-bold text-primary">Series</div>
+        <div class="d-flex flex-wrap">
+            <div class="me-2 mb-2" th:each="serie : ${series}" style="width: 160px;">
+                <a th:href="@{/seasonsBySeries(seriesId=${serie.seriesId})}" style="text-decoration:none;color:inherit;">
+                    <div class="card" style="width:100%;">
+                        <img th:if="${serie.cover} != null" th:src="${serie.cover}" class="card-img-top" style="height:90px;object-fit:cover;" alt="">
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-0" th:text="${serie.name}" style="font-size:0.85rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;"></h6>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

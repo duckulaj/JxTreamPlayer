@@ -263,4 +263,25 @@ public class HomeController {
         // return "fragments/resetStatus :: status";
         return "home";
     }
+
+    @GetMapping("/searchTitles")
+    public String searchTitles(@RequestParam String query, Model model) {
+        var movies = jsonService.searchMoviesByTitle(query);
+        var series = jsonService.searchSeriesByTitle(query);
+        // Populate directSource for each movie using selected provider credentials (so results behave like movieCategoryItems)
+        var credentials = providerService.getSelectedProvider().map(p -> new com.hawkins.xtreamjson.util.XstreamCredentials(p.getApiUrl(), p.getUsername(), p.getPassword())).orElse(new com.hawkins.xtreamjson.util.XstreamCredentials("", "", ""));
+        for (var movie : movies) {
+            String url = com.hawkins.xtreamjson.util.StreamUrlHelper.buildVodUrl(
+                credentials.getApiUrl(),
+                credentials.getUsername(),
+                credentials.getPassword(),
+                movie
+            );
+            movie.setDirectSource(url);
+        }
+        model.addAttribute("movies", movies);
+        model.addAttribute("series", series);
+        return "fragments/searchResults :: search-results";
+    }
+
 }

@@ -20,4 +20,7 @@ public interface MovieStreamRepository extends JpaRepository<MovieStream, Intege
 
     @Query("SELECT DISTINCT UPPER(SUBSTRING(m.name, 1, 1)) FROM MovieStream m WHERE m.categoryId = :categoryId ORDER BY UPPER(SUBSTRING(m.name, 1, 1))")
     List<String> findDistinctFirstLettersByCategoryId(@Param("categoryId") String categoryId);
+
+    @Query("SELECT m FROM MovieStream m WHERE LOWER(m.name) LIKE LOWER(CONCAT('%', :q, '%'))")
+    List<MovieStream> searchByNameContaining(@Param("q") String q);
 }

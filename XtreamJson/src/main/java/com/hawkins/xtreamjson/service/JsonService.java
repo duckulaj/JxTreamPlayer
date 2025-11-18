@@ -612,5 +612,24 @@ public class JsonService {
 		return episodeRepository.findBySeasonId(seasonId);
 	}
 
+    public List<MovieStream> searchMoviesByTitle(String q) {
+		if (q == null || q.isBlank()) return List.of();
+		try {
+			return movieStreamRepository.searchByNameContaining(q);
+		} catch (Exception e) {
+			log.warn("searchMoviesByTitle failed for '{}': {}", q, e.getMessage());
+			return List.of();
+		}
+	}
+
+	public List<Series> searchSeriesByTitle(String q) {
+		if (q == null || q.isBlank()) return List.of();
+		try {
+			return seriesRepository.searchByNameContaining(q);
+		} catch (Exception e) {
+			log.warn("searchSeriesByTitle failed for '{}': {}", q, e.getMessage());
+			return List.of();
+		}
+	}
     
 }
