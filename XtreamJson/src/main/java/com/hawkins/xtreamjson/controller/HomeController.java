@@ -23,7 +23,6 @@ import com.hawkins.xtreamjson.repository.SeasonRepository;
 import com.hawkins.xtreamjson.repository.SeriesRepository;
 import com.hawkins.xtreamjson.service.IptvProviderService;
 import com.hawkins.xtreamjson.service.JsonService;
-import com.hawkins.xtreamjson.service.PlaylistService;
 import com.hawkins.xtreamjson.service.StrmService;
 import com.hawkins.xtreamjson.util.StreamUrlHelper;
 
