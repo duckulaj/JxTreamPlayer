@@ -71,7 +71,8 @@ public class LogController {
                     .header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
                     .body(log);
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Could not read log file: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Could not read log file: " + e.getMessage());
         }
     }
 
@@ -89,6 +90,7 @@ public class LogController {
             private long lastSent = 0L;
 
             @Override
+            @SuppressWarnings("null")
             public void run() {
                 try {
                     Path logPath = Path.of("XstreamJson.log");
@@ -124,7 +126,8 @@ public class LogController {
             private void cleanup() {
                 try {
                     emitter.complete();
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
                 exec.shutdown();
             }
         }, 0, 2, TimeUnit.SECONDS);

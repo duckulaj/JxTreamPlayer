@@ -1,0 +1,14 @@
+{
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Spring Boot-XtreamJsonApplication<xtream>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "com.hawkins.xtreamjson.XtreamJsonApplication",
+      "projectName": "xtream",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
+    }
+  ]
+}

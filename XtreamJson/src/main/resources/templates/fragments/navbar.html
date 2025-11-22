@@ -11,11 +11,11 @@
     <div class="collapse navbar-collapse" id="navbarActions">
       <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
         <li class="nav-item">
-          <a class="btn btn-outline-light my-1 px-3 rounded-pill transition" href="#" 
+          <a class="btn btn-outline-light my-1 px-3 rounded-pill transition" href="javascript:void(0)" 
              hx-get="/liveCategoriesDropdown" 
              hx-target="#live-category-dropdown" 
              hx-swap="innerHTML"
-             hx-on:click="
+             onclick="
                 if (!document.getElementById('live-category-dropdown')) { window.location.href = '/?show=live'; return false; }
                 document.getElementById('admin-properties-container').innerHTML='';
                 document.getElementById('providers-container').innerHTML='';
@@ -31,11 +31,11 @@
           </a>
         </li>
         <li class="nav-item">
-          <a class="btn btn-outline-light my-1 px-3 rounded-pill transition" href="#" 
+          <a class="btn btn-outline-light my-1 px-3 rounded-pill transition" href="javascript:void(0)" 
              hx-get="/movieCategoriesDropdown" 
              hx-target="#movie-category-dropdown" 
              hx-swap="innerHTML"
-             hx-on:click="
+             onclick="
                 if (!document.getElementById('movie-category-dropdown')) { window.location.href = '/?show=movie'; return false; }
                 document.getElementById('admin-properties-container').innerHTML='';
                 document.getElementById('providers-container').innerHTML='';
@@ -51,11 +51,11 @@
           </a>
         </li>
         <li class="nav-item">
-          <a class="btn btn-outline-light my-1 px-3 rounded-pill transition" href="#" 
+          <a class="btn btn-outline-light my-1 px-3 rounded-pill transition" href="javascript:void(0)" 
              hx-get="/seriesCategoriesDropdown" 
              hx-target="#series-category-dropdown" 
              hx-swap="innerHTML"
-             hx-on:click="
+             onclick="
                 if (!document.getElementById('series-category-dropdown')) { window.location.href = '/?show=series'; return false; }
                 document.getElementById('admin-properties-container').innerHTML='';
                 document.getElementById('providers-container').innerHTML='';
@@ -78,11 +78,11 @@
           </a>
           <ul class="dropdown-menu dropdown-menu-end shadow rounded animate__animated animate__fadeIn" aria-labelledby="settingsDropdown">
             <li>
-              <a class="dropdown-item d-flex align-items-center" href="#" 
+              <a class="dropdown-item d-flex align-items-center" href="javascript:void(0)" 
                  hx-get="/providers/fragment" 
                  hx-target="#providers-container" 
                  hx-swap="innerHTML"
-                 hx-on:click="
+                 onclick="
                     if (!document.getElementById('providers-container')) { window.location.href = '/?show=providers'; return false; }
                     document.getElementById('admin-properties-container').innerHTML='';
                     document.getElementById('live-category-dropdown').innerHTML='';
@@ -98,11 +98,11 @@
               </a>
             </li>
             <li>
-              <a class="dropdown-item d-flex align-items-center" href="#"
+              <a class="dropdown-item d-flex align-items-center" href="javascript:void(0)"
                  hx-get="/admin/properties"
                  hx-target="#admin-properties-container"
                  hx-swap="innerHTML"
-                 hx-on:click="
+                 onclick="
                     if (!document.getElementById('admin-properties-container')) { window.location.href = '/admin/properties'; return false; }
                     document.getElementById('admin-properties-container').innerHTML='';
                     document.getElementById('providers-container').innerHTML='';

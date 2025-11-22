@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class IptvProviderService {
-    
+
     @Autowired
     private IptvProviderRepository repository;
 
@@ -23,10 +23,12 @@ public class IptvProviderService {
         return repository.findAll();
     }
 
+    @SuppressWarnings("null")
     public Optional<IptvProvider> getProvider(Long id) {
         return repository.findById(id);
     }
 
+    @SuppressWarnings("null")
     public IptvProvider saveProvider(IptvProvider provider) {
         return repository.save(provider);
     }
@@ -38,6 +40,7 @@ public class IptvProviderService {
         log.info("Provider {} is now selected (bulk update)", id);
     }
 
+    @SuppressWarnings("null")
     public void deleteProvider(Long id) {
         repository.deleteById(id);
     }
@@ -45,7 +48,8 @@ public class IptvProviderService {
     // @TrackExecutionTime
     public Optional<IptvProvider> getSelectedProvider() {
         Optional<IptvProvider> selected = repository.findBySelectedTrue();
-        // log.info("getSelectedProvider: {}", selected.map(IptvProvider::getId).orElse(null));
+        // log.info("getSelectedProvider: {}",
+        // selected.map(IptvProvider::getId).orElse(null));
         return selected;
     }
 }

@@ -25,26 +25,22 @@ public class EpgService {
      * WARNING - Removed try catching itself - possible behaviour change.
      */
     public void downloadEpgXml() throws IOException {
-        String baseUrl = ((IptvProvider)this.iptvProviderService.getSelectedProvider().get()).getApiUrl();
-        String username = ((IptvProvider)this.iptvProviderService.getSelectedProvider().get()).getUsername();
-        String password = ((IptvProvider)this.iptvProviderService.getSelectedProvider().get()).getPassword();
+        String baseUrl = ((IptvProvider) this.iptvProviderService.getSelectedProvider().get()).getApiUrl();
+        String username = ((IptvProvider) this.iptvProviderService.getSelectedProvider().get()).getUsername();
+        String password = ((IptvProvider) this.iptvProviderService.getSelectedProvider().get()).getPassword();
         String epgUrl = String.format("%s/xmltv.php?username=%s&password=%s", baseUrl, username, password);
         HttpURLConnection connection = null;
         InputStream inputStream = null;
         FileOutputStream outputStream = null;
         try {
             int bytesRead;
-            URL url = null;
+            URL url;
             try {
                 url = new URI(epgUrl).toURL();
+            } catch (URISyntaxException | MalformedURLException e) {
+                throw new IOException("Invalid EPG URL: " + epgUrl, e);
             }
-            catch (MalformedURLException e) {
-                e.printStackTrace();
-            }
-            catch (URISyntaxException e) {
-                e.printStackTrace();
-            }
-            connection = (HttpURLConnection)url.openConnection();
+            connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(10000);
             connection.setReadTimeout(20000);
@@ -58,8 +54,7 @@ public class EpgService {
             while ((bytesRead = inputStream.read(buffer)) != -1) {
                 outputStream.write(buffer, 0, bytesRead);
             }
-        }
-        finally {
+        } finally {
             if (inputStream != null) {
                 inputStream.close();
             }

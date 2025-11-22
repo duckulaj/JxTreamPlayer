@@ -11,7 +11,7 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutionException;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -23,8 +23,7 @@ import java.util.function.Consumer;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -138,6 +137,7 @@ public class JsonService {
 	}
 
 	@TrackExecutionTime
+	@SuppressWarnings("null")
 	public void retreiveJsonData() {
 		try {
 			var providerOpt = providerService.getSelectedProvider();
@@ -229,6 +229,7 @@ public class JsonService {
 	}
 
 	@TrackExecutionTime
+	@SuppressWarnings("null")
 	public void fetchAndSaveSeries(XstreamCredentials creds, String seriesCatsUrl) {
 		ApplicationProperties props = applicationPropertiesService.getCurrentProperties();
 		final int SERIES_INFO_MAX_INFLIGHT = props.getSeriesInfoMaxInflight();
