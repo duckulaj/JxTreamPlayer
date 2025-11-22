@@ -23,12 +23,10 @@ public class IptvProviderService {
         return repository.findAll();
     }
 
-    @SuppressWarnings("null")
     public Optional<IptvProvider> getProvider(Long id) {
         return repository.findById(id);
     }
 
-    @SuppressWarnings("null")
     public IptvProvider saveProvider(IptvProvider provider) {
         return repository.save(provider);
     }
@@ -40,7 +38,6 @@ public class IptvProviderService {
         log.info("Provider {} is now selected (bulk update)", id);
     }
 
-    @SuppressWarnings("null")
     public void deleteProvider(Long id) {
         repository.deleteById(id);
     }

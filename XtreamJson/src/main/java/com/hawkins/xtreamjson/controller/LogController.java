@@ -90,7 +90,6 @@ public class LogController {
             private long lastSent = 0L;
 
             @Override
-            @SuppressWarnings("null")
             public void run() {
                 try {
                     Path logPath = Path.of("XstreamJson.log");

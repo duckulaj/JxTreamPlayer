@@ -3,7 +3,6 @@ package com.hawkins.xtreamjson.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
-import org.springframework.lang.NonNull;
 
 import com.hawkins.xtreamjson.service.IptvProviderService;
 
@@ -16,8 +15,8 @@ public class ProviderSetupInterceptor implements HandlerInterceptor {
     private IptvProviderService providerService;
 
     @Override
-    public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
-            @NonNull Object handler) throws Exception {
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+            throws Exception {
         String uri = request.getRequestURI();
         // Allow access to /providers and static resources
         if (uri.startsWith("/providers") || uri.startsWith("/css") || uri.startsWith("/js") || uri.startsWith("/images")

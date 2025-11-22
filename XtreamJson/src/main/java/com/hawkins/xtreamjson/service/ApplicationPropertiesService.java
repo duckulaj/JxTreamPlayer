@@ -25,7 +25,6 @@ public class ApplicationPropertiesService {
     }
 
     @Transactional
-    @SuppressWarnings("null")
     public ApplicationProperties updateProperties(ApplicationProperties updated) {
         if (updated.getId() == null) {
             return repository.save(updated);
@@ -43,7 +42,6 @@ public class ApplicationPropertiesService {
         }
     }
 
-    @SuppressWarnings("null")
     public void deleteProperties(Long id) {
         repository.deleteById(id);
     }

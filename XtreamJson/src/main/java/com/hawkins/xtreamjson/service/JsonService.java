@@ -137,7 +137,6 @@ public class JsonService {
 	}
 
 	@TrackExecutionTime
-	@SuppressWarnings("null")
 	public void retreiveJsonData() {
 		try {
 			var providerOpt = providerService.getSelectedProvider();
@@ -229,7 +228,6 @@ public class JsonService {
 	}
 
 	@TrackExecutionTime
-	@SuppressWarnings("null")
 	public void fetchAndSaveSeries(XstreamCredentials creds, String seriesCatsUrl) {
 		ApplicationProperties props = applicationPropertiesService.getCurrentProperties();
 		final int SERIES_INFO_MAX_INFLIGHT = props.getSeriesInfoMaxInflight();
