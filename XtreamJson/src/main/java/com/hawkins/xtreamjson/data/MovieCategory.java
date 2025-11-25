@@ -17,7 +17,8 @@ public class MovieCategory {
     @JsonProperty("parent_id")
     private int parentId;
 
-    public MovieCategory() {}
+    public MovieCategory() {
+    }
 
     public MovieCategory(String categoryId, String categoryName, int parentId) {
         this.categoryId = categoryId;

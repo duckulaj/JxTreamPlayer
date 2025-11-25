@@ -18,21 +18,51 @@ public class ApplicationProperties {
     private String excludedTitles = "";
 
     // Getters and setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public int getSeriesInfoMaxInflight() { return seriesInfoMaxInflight; }
-    public void setSeriesInfoMaxInflight(int v) { this.seriesInfoMaxInflight = v; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public int getBatchSize() { return batchSize; }
-    public void setBatchSize(int v) { this.batchSize = v; }
+    public int getSeriesInfoMaxInflight() {
+        return seriesInfoMaxInflight;
+    }
 
-    public int getMaxRetries() { return maxRetries; }
-    public void setMaxRetries(int v) { this.maxRetries = v; }
-    
-    public String getIncludedCountries() { return includedCountries; }
-    public void setIncludedCountries(String v) { this.includedCountries = v; }
+    public void setSeriesInfoMaxInflight(int v) {
+        this.seriesInfoMaxInflight = v;
+    }
 
-    public String getExcludedTitles() { return excludedTitles; }
-    public void setExcludedTitles(String v) { this.excludedTitles = v; }
+    public int getBatchSize() {
+        return batchSize;
+    }
+
+    public void setBatchSize(int v) {
+        this.batchSize = v;
+    }
+
+    public int getMaxRetries() {
+        return maxRetries;
+    }
+
+    public void setMaxRetries(int v) {
+        this.maxRetries = v;
+    }
+
+    public String getIncludedCountries() {
+        return includedCountries;
+    }
+
+    public void setIncludedCountries(String v) {
+        this.includedCountries = v;
+    }
+
+    public String getExcludedTitles() {
+        return excludedTitles;
+    }
+
+    public void setExcludedTitles(String v) {
+        this.excludedTitles = v;
+    }
 }

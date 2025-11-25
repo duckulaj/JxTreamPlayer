@@ -17,5 +17,4 @@ public class LiveCategory {
     @JsonProperty("parent_id")
     private int parentId;
 
-    
 }

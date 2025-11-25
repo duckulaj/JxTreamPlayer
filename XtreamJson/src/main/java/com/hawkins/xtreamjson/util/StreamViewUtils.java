@@ -11,8 +11,9 @@ public class StreamViewUtils {
 
     /**
      * Returns the cover image for a series, or a placeholder if not available.
-     * @param seriesId the series ID as String
-     * @param seriesImage the provided image (may be null or empty)
+     * 
+     * @param seriesId         the series ID as String
+     * @param seriesImage      the provided image (may be null or empty)
      * @param seriesRepository the repository to fetch the series if needed
      * @return the image URL to use
      */
@@ -26,7 +27,8 @@ public class StreamViewUtils {
         } catch (NumberFormatException e) {
             logger.warn("Invalid seriesId for findById: {}", seriesId);
         }
-        if (series != null && series.getCover() != null && !series.getCover().toLowerCase().contains("null") && !series.getCover().isEmpty()) {
+        if (series != null && series.getCover() != null && !series.getCover().toLowerCase().contains("null")
+                && !series.getCover().isEmpty()) {
             return series.getCover();
         }
         return "/images/placeholder.png";

@@ -15,11 +15,13 @@ public class XtreamCodesUtils {
 
     /**
      * Sanitizes a string for safe use as a file or directory name.
+     * 
      * @param name Input string
      * @return Sanitized string
      */
     public static String sanitizeName(String name) {
-        if (name == null) return "";
+        if (name == null)
+            return "";
         return name.replaceAll("[\\/:*?\"<>|]", "_").replaceAll("\s+", " ").trim();
     }
 
@@ -27,9 +29,11 @@ public class XtreamCodesUtils {
      * Checks if any of the provided strings are null or empty.
      */
     public static boolean isNullOrEmpty(String... values) {
-        if (values == null) return true;
+        if (values == null)
+            return true;
         for (String v : values) {
-            if (v == null || v.isEmpty()) return true;
+            if (v == null || v.isEmpty())
+                return true;
         }
         return false;
     }
@@ -38,8 +42,9 @@ public class XtreamCodesUtils {
      * Builds a VOD/movie stream URL from credentials and MovieStream.
      */
     public static String buildVodUrl(XstreamCredentials credentials, com.hawkins.xtreamjson.data.MovieStream stream) {
-        if (credentials == null || stream == null || isNullOrEmpty(credentials.getApiUrl(), credentials.getUsername(), credentials.getPassword()) ||
-            isNullOrEmpty(stream.getContainerExtension()) || stream.getStreamId() <= 0) {
+        if (credentials == null || stream == null
+                || isNullOrEmpty(credentials.getApiUrl(), credentials.getUsername(), credentials.getPassword()) ||
+                isNullOrEmpty(stream.getContainerExtension()) || stream.getStreamId() <= 0) {
             return null;
         }
         return String.format("%s/movie/%s/%s/%d.%s",
@@ -47,34 +52,37 @@ public class XtreamCodesUtils {
                 credentials.getUsername(),
                 credentials.getPassword(),
                 stream.getStreamId(),
-                stream.getContainerExtension()
-        );
+                stream.getContainerExtension());
     }
 
     /**
      * Builds a live stream URL from credentials and LiveStream.
      */
     public static String buildLiveUrl(XstreamCredentials credentials, com.hawkins.xtreamjson.data.LiveStream stream) {
-        if (credentials == null || stream == null || isNullOrEmpty(credentials.getApiUrl(), credentials.getUsername(), credentials.getPassword()) || stream.getStreamId() <= 0) {
+        if (credentials == null || stream == null
+                || isNullOrEmpty(credentials.getApiUrl(), credentials.getUsername(), credentials.getPassword())
+                || stream.getStreamId() <= 0) {
             return null;
         }
         return String.format("%s/live/%s/%s/%d.ts",
                 credentials.getApiUrl(),
                 credentials.getUsername(),
                 credentials.getPassword(),
-                stream.getStreamId()
-        );
+                stream.getStreamId());
     }
 
     /**
-     * Builds an endpoint URL using a template from Constants and XstreamCredentials.
-     * @param template The endpoint template from Constants
+     * Builds an endpoint URL using a template from Constants and
+     * XstreamCredentials.
+     * 
+     * @param template    The endpoint template from Constants
      * @param credentials The credentials object
-     * @param args Any additional arguments for the template
+     * @param args        Any additional arguments for the template
      * @return The formatted URL
      */
     public static String buildEndpointUrl(String template, XstreamCredentials credentials, Object... args) {
-        if (credentials == null || isNullOrEmpty(credentials.getApiUrl(), credentials.getUsername(), credentials.getPassword())) {
+        if (credentials == null
+                || isNullOrEmpty(credentials.getApiUrl(), credentials.getUsername(), credentials.getPassword())) {
             return null;
         }
         Object[] fullArgs = new Object[3 + (args != null ? args.length : 0)];
@@ -86,15 +94,18 @@ public class XtreamCodesUtils {
         }
         return String.format(template, fullArgs);
     }
-    
+
     /**
-     * Removes language prefix, pipe/vertical bar, and any preceding space from the movie title.
+     * Removes language prefix, pipe/vertical bar, and any preceding space from the
+     * movie title.
      * E.g. "EN ▎ Cursed" or "EN | Cursed" -> "Cursed"
      */
     public static String cleanTitle(String name) {
-        if (name == null) return "";
+        if (name == null)
+            return "";
         int idx = name.indexOf('|');
-        if (idx == -1) idx = name.indexOf('▎');
+        if (idx == -1)
+            idx = name.indexOf('▎');
         if (idx != -1 && idx + 1 < name.length()) {
             return name.substring(idx + 1).trim();
         }
@@ -102,20 +113,24 @@ public class XtreamCodesUtils {
     }
 
     // Helper to get includedCountries as a Set<String>
-    public static java.util.Set<String> getIncludedCountriesSet(ApplicationPropertiesService applicationPropertiesService) {
+    public static java.util.Set<String> getIncludedCountriesSet(
+            ApplicationPropertiesService applicationPropertiesService) {
         String included = applicationPropertiesService.getCurrentProperties().getIncludedCountries();
-        if (included == null || included.isBlank()) return java.util.Collections.emptySet();
+        if (included == null || included.isBlank())
+            return java.util.Collections.emptySet();
         java.util.Set<String> set = new java.util.HashSet<>();
         for (String s : included.split(",")) {
             String trimmed = s.trim();
-            if (!trimmed.isEmpty()) set.add(trimmed.toUpperCase());
+            if (!trimmed.isEmpty())
+                set.add(trimmed.toUpperCase());
         }
         return set;
     }
 
     // Helper to check if a name matches includedCountries
     public static boolean isIncluded(String name, java.util.Set<String> includedSet) {
-        if (name == null || name.isEmpty() || includedSet.isEmpty()) return false;
+        if (name == null || name.isEmpty() || includedSet.isEmpty())
+            return false;
         String upperName = name.toUpperCase();
         for (String prefix : includedSet) {
             if (upperName.startsWith(prefix)) {
@@ -124,7 +139,7 @@ public class XtreamCodesUtils {
         }
         return false;
     }
-    
+
     public static String printNow() {
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
         Date date = new Date();

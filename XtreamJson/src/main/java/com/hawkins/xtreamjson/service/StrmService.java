@@ -32,7 +32,7 @@ public class StrmService {
 
     @Autowired
     private MovieStreamRepository movieStreamRepository;
-    
+
     @Autowired
     private IptvProviderService providerService;
 
@@ -49,17 +49,17 @@ public class StrmService {
     // Create a counter for Movies and Shows generated
     AtomicInteger movieCounter = new AtomicInteger(0);
     AtomicInteger showCounter = new AtomicInteger(0);
-    
+
     public void generateAllStrmFiles() throws IOException {
-		generateMovieFolders();
-		generateShowFolders();
-		log.info("Generated {} movie folders.", movieCounter.get());
-		log.info("Generated {} shows.", showCounter.get());
-	}
-    
+        generateMovieFolders();
+        generateShowFolders();
+        log.info("Generated {} movie folders.", movieCounter.get());
+        log.info("Generated {} shows.", showCounter.get());
+    }
+
     @TrackExecutionTime
     public void generateMovieFolders() throws IOException {
-    	var selectedProviderOpt = providerService.getSelectedProvider();
+        var selectedProviderOpt = providerService.getSelectedProvider();
         if (selectedProviderOpt.isEmpty()) {
             throw new IllegalStateException("No IPTV provider selected.");
         }
@@ -73,11 +73,11 @@ public class StrmService {
         java.util.Set<String> includedSet = getIncludedCountriesSet();
 
         List<MovieStream> movies = movieStreamRepository.findAll().stream()
-            .filter(movie -> titleIncludesCountry(movie.getName(), includedSet))
-            .toList();
-        
+                .filter(movie -> titleIncludesCountry(movie.getName(), includedSet))
+                .toList();
+
         log.info("Generating .strm files for {} movies matching included countries.", movies.size());
-        
+
         for (MovieStream movie : movies) {
             String safeName = sanitizeFileName(movie.getName(), includedSet, movie.getTmdb());
             Path movieDir = moviesPath.resolve(safeName);
@@ -88,12 +88,11 @@ public class StrmService {
             Path strmFile = movieDir.resolve(strmFileName);
             // Overwrite file if it already exists
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(strmFile.toFile(), false))) {
-            	String url = StreamUrlHelper.buildVodUrl(
+                String url = StreamUrlHelper.buildVodUrl(
                         selectedProvider.getApiUrl(),
                         selectedProvider.getUsername(),
                         selectedProvider.getPassword(),
-                        movie
-                    );
+                        movie);
                 writer.write(url != null ? url : "");
             }
             movieCounter.incrementAndGet();
@@ -106,20 +105,20 @@ public class StrmService {
         if (!Files.exists(showsPath)) {
             Files.createDirectory(showsPath);
         }
-        
-     // Get included countries set
+
+        // Get included countries set
         java.util.Set<String> includedSet = getIncludedCountriesSet();
-        
+
         List<Series> seriesList = seriesRepository.findAll().stream()
                 .filter(series -> titleIncludesCountry(series.getName(), includedSet))
                 .toList();
         // List<Series> seriesList = seriesRepository.findAll();
-        
+
         log.info("Generating .strm files for {} series matching included countries.", seriesList.size());
-        
+
         for (Series series : seriesList) {
             showCounter.incrementAndGet();
-            
+
             String seriesFolderName = sanitizeFileName(series.getName(), null, null);
 
             Path seriesPath = showsPath.resolve(seriesFolderName);
@@ -135,18 +134,18 @@ public class StrmService {
                     Files.createDirectory(seasonPath);
                 }
                 // Get all episodes for this season
-                List<Episode> episodes = episodeRepository.findBySeriesIdAndSeasonId(String.valueOf(series.getSeriesId()), season.getSeasonId());
+                List<Episode> episodes = episodeRepository
+                        .findBySeriesIdAndSeasonId(String.valueOf(series.getSeriesId()), season.getSeasonId());
                 for (Episode episode : episodes) {
                     String episodeNum = padNumber(episode.getEpisodeNum(), 2);
                     String seasonNum = padNumber(String.valueOf(season.getSeasonNumber()), 2);
                     String episodeTitle = sanitizeFileName(episode.getName(), null, null);
                     String fileName = String.format("%s%s S%sE%s %s.strm",
-                        seriesFolderName,
-                        "",
-                        seasonNum,
-                        episodeNum,
-                        episodeTitle
-                    );
+                            seriesFolderName,
+                            "",
+                            seasonNum,
+                            episodeNum,
+                            episodeTitle);
                     Path episodeFile = seasonPath.resolve(fileName);
                     // Write directSource to the .strm file
                     try (BufferedWriter writer = new BufferedWriter(new FileWriter(episodeFile.toFile(), false))) {
@@ -159,17 +158,20 @@ public class StrmService {
 
     private java.util.Set<String> getIncludedCountriesSet() {
         String included = applicationPropertiesService.getCurrentProperties().getIncludedCountries();
-        if (included == null || included.isBlank()) return java.util.Collections.emptySet();
+        if (included == null || included.isBlank())
+            return java.util.Collections.emptySet();
         java.util.Set<String> set = new java.util.HashSet<>();
         for (String s : included.split(",")) {
             String trimmed = s.trim();
-            if (!trimmed.isEmpty()) set.add(trimmed.toUpperCase());
+            if (!trimmed.isEmpty())
+                set.add(trimmed.toUpperCase());
         }
         return set;
     }
 
     private boolean titleIncludesCountry(String title, java.util.Set<String> includedSet) {
-        if (title == null || title.isEmpty() || includedSet.isEmpty()) return false;
+        if (title == null || title.isEmpty() || includedSet.isEmpty())
+            return false;
         String upperTitle = title.toUpperCase();
         for (String country : includedSet) {
             if (upperTitle.contains(country)) {
@@ -180,7 +182,8 @@ public class StrmService {
     }
 
     private String padNumber(String num, int length) {
-        if (num == null) return "00";
+        if (num == null)
+            return "00";
         try {
             int n = Integer.parseInt(num.replaceAll("\\D", ""));
             return String.format("%0" + length + "d", n);
@@ -190,7 +193,8 @@ public class StrmService {
     }
 
     private String sanitizeFileName(String name, java.util.Set<String> includedSet, String tmdb) {
-        if (name == null) return "Unknown";
+        if (name == null)
+            return "Unknown";
         // Remove illegal characters for file/folder names
         String safe = name.replaceAll("[\\\\/:*?\"<>|]", "_");
         safe = safe.replaceAll("[\n\r]", " ").trim();

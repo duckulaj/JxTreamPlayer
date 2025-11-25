@@ -37,7 +37,8 @@ public class ApplicationPropertiesController {
 
     @GetMapping("/edit/{id}")
     public String edit(@PathVariable Long id, Model model) {
-        model.addAttribute("currentProperties", service.getAll().stream().filter(p -> p.getId().equals(id)).findFirst().orElse(null));
+        model.addAttribute("currentProperties",
+                service.getAll().stream().filter(p -> p.getId().equals(id)).findFirst().orElse(null));
         model.addAttribute("propertiesList", service.getAll());
         return "admin/properties";
     }

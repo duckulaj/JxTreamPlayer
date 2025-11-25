@@ -23,7 +23,8 @@ public class SeriesCategory {
     @Transient
     private List<Series> seriesList;
 
-    public SeriesCategory() {}
+    public SeriesCategory() {
+    }
 
     public SeriesCategory(String categoryId, String categoryName, int parentId) {
         this.categoryId = categoryId;

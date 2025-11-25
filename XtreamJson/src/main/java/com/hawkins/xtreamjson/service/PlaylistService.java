@@ -26,38 +26,39 @@ public class PlaylistService {
     private final LiveStreamRepository liveStreamRepository;
     private final ApplicationPropertiesService applicationPropertiesService;
 
-    public PlaylistService(LiveCategoryRepository liveCategoryRepository, LiveStreamRepository liveStreamRepository, ApplicationPropertiesService applicationPropertiesService) {
+    public PlaylistService(LiveCategoryRepository liveCategoryRepository, LiveStreamRepository liveStreamRepository,
+            ApplicationPropertiesService applicationPropertiesService) {
         this.liveCategoryRepository = liveCategoryRepository;
         this.liveStreamRepository = liveStreamRepository;
         this.applicationPropertiesService = applicationPropertiesService;
     }
 
     public void generateFullLibraryPlaylist() {
-    	
-    	log.info("Generating full library playlist...");
+
+        log.info("Generating full library playlist...");
         StringBuilder playlist = new StringBuilder("#EXTM3U\n");
         AtomicInteger counter = new AtomicInteger(1);
 
         java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet(applicationPropertiesService);
-        
+
         // Get excluded titles from application properties
         String excludedTitlesRaw = applicationPropertiesService.getCurrentProperties().getExcludedTitles();
         String[] excludedTitlesArr = java.util.Arrays.stream(excludedTitlesRaw.split(","))
-            .map(String::trim)
-            .filter(s -> !s.isEmpty())
-            .toArray(String[]::new);
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toArray(String[]::new);
         // Build regex pattern for efficient matching
         String regex = java.util.Arrays.stream(excludedTitlesArr)
-            .map(Pattern::quote)
-            .reduce((a, b) -> a + "|" + b)
-            .orElse("");
+                .map(Pattern::quote)
+                .reduce((a, b) -> a + "|" + b)
+                .orElse("");
         Pattern excludedPattern = regex.isEmpty() ? null : Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
 
         // Fetch all categories, filter by included countries, and sort
         List<String> includedCategoryNames = liveCategoryRepository.findAll().stream()
-            .map(LiveCategory::getCategoryName)
-            .filter(catName -> XtreamCodesUtils.isIncluded(catName, includedSet))
-            .collect(Collectors.toList());
+                .map(LiveCategory::getCategoryName)
+                .filter(catName -> XtreamCodesUtils.isIncluded(catName, includedSet))
+                .collect(Collectors.toList());
         List<LiveCategory> categories = liveCategoryRepository.findByCategoryNameIn(includedCategoryNames)
                 .stream()
                 .sorted(Comparator.comparing(LiveCategory::getCategoryName, String.CASE_INSENSITIVE_ORDER))
@@ -66,7 +67,8 @@ public class PlaylistService {
         for (LiveCategory category : categories) {
             // Fetch all live streams for this category
             List<LiveStream> streams = liveStreamRepository.findByCategoryId(category.getCategoryId());
-            if (streams.isEmpty()) continue;
+            if (streams.isEmpty())
+                continue;
             playlist.append("\n# ---- Category: ")
                     .append(category.getCategoryName())
                     .append(" ----\n");
@@ -79,11 +81,13 @@ public class PlaylistService {
                 }
                 if (!isExcluded) {
                     int index = counter.getAndIncrement();
-                    String displayTitle = String.format("(%03d) [%s] %s", index, category.getCategoryName(), stream.getName());
+                    String displayTitle = String.format("(%03d) [%s] %s", index, category.getCategoryName(),
+                            stream.getName());
                     playlist.append("#EXTINF:-1 ")
                             .append("tvg-id=\"").append(stream.getEpgChannelId()).append("\" ")
                             .append("tvg-name=\"").append(stream.getName()).append("\" ")
-                            .append("tvg-logo=\"").append(stream.getStreamIcon() != null ? stream.getStreamIcon() : "").append("\" ")
+                            .append("tvg-logo=\"").append(stream.getStreamIcon() != null ? stream.getStreamIcon() : "")
+                            .append("\" ")
                             .append("group-title=\"").append(category.getCategoryName()).append("\", ")
                             .append(displayTitle)
                             .append("\n")
@@ -92,16 +96,16 @@ public class PlaylistService {
                 }
             }
         }
-        
-     // Write playlistContent to a file
+
+        // Write playlistContent to a file
         try {
             java.nio.file.Files.write(java.nio.file.Paths.get("playlist.m3u8"), playlist.toString().getBytes());
         } catch (java.io.IOException e) {
             // Optionally log or handle the error
             e.printStackTrace();
         }
-        
+
         log.info("Full library playlist generated with {} streams.", counter.get() - 1);
-        
+
     }
 }

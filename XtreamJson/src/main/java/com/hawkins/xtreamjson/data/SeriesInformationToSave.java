@@ -11,6 +11,5 @@ public class SeriesInformationToSave {
 	public List<Series> series;
 	public List<Season> seasons;
 	public List<Episode> episodes;
-	
-	
+
 }
