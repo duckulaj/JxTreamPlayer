@@ -24,7 +24,8 @@
 <div th:replace="~{fragments/navbar :: navbar}"></div>
   <div class="stream-container">
     <h2 class="mb-4">Streaming Player</h2>
-    <div id="streamUrlDisplay" class="mb-2 text-info small"></div>
+    <h3 id="movieTitleDisplay" class="text-white mb-2"></h3>
+    <div id="streamUrlDisplay" class="mb-2 text-info small d-none"></div>
     <video id="player" controls autoplay muted preload="auto"></video>
     <div id="videoError" class="alert alert-danger mt-3 d-none"></div>
     <div id="vlcButtonContainer" class="mt-2"></div>
@@ -40,20 +41,30 @@
     if (!injectedUrl || injectedUrl.includes('${url}')) {
       injectedUrl = null; 
     }
+    
+    let injectedTitle = "[[${title}]]";
+    if (!injectedTitle || injectedTitle.includes('${title}')) {
+        injectedTitle = null;
+    }
 
     // Fallback to query param
     function getQueryParam(name) {
       return new URLSearchParams(window.location.search).get(name);
     }
     let streamUrl = injectedUrl || getQueryParam('url');
+    let streamTitle = injectedTitle || getQueryParam('title');
 
     // DOM references
     const errorDiv = document.getElementById('videoError');
     const player = document.getElementById('player');
     const urlDisplay = document.getElementById('streamUrlDisplay');
+    const titleDisplay = document.getElementById('movieTitleDisplay');
 
     if (streamUrl) {
-      urlDisplay.textContent = 'Stream URL: ' + streamUrl;
+      urlDisplay.textContent = streamUrl;
+      if (streamTitle) {
+          titleDisplay.textContent = streamTitle;
+      }
       const ext = streamUrl.split('.').pop().toLowerCase();
 
       if (['mkv', 'hevc'].includes(ext) || streamUrl.includes('265')) {

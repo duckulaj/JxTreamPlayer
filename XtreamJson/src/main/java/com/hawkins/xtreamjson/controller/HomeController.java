@@ -162,8 +162,10 @@ public class HomeController {
     }
 
     @GetMapping("/stream.html")
-    public String stream(@RequestParam(required = false) String url, Model model) {
+    public String stream(@RequestParam(required = false) String url, @RequestParam(required = false) String title,
+            Model model) {
         model.addAttribute("url", url);
+        model.addAttribute("title", title);
         return "stream";
     }
 
