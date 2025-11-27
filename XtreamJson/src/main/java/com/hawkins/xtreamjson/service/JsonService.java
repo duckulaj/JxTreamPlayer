@@ -535,7 +535,11 @@ public class JsonService {
 
 		PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "name"));
 
-		return movieStreamRepository.findAll(spec, pageRequest);
+		return movieStreamRepository.findAll(spec, pageRequest)
+				.map(m -> {
+					m.setName(XtreamCodesUtils.cleanTitle(m.getName()));
+					return m;
+				});
 	}
 
 	public List<String> getAvailableStartingLetters(String categoryId) {
@@ -579,6 +583,7 @@ public class JsonService {
 		java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet(applicationPropertiesService);
 		return movieStreamRepository.findByCategoryId(categoryId).stream()
 				.filter(m -> XtreamCodesUtils.isIncluded(m.getName(), includedSet))
+				.peek(m -> m.setName(XtreamCodesUtils.cleanTitle(m.getName())))
 				.toList();
 	}
 
@@ -637,7 +642,9 @@ public class JsonService {
 		if (q == null || q.isBlank())
 			return List.of();
 		try {
-			return movieStreamRepository.searchByNameContaining(q);
+			List<MovieStream> results = movieStreamRepository.searchByNameContaining(q);
+			results.forEach(m -> m.setName(XtreamCodesUtils.cleanTitle(m.getName())));
+			return results;
 		} catch (Exception e) {
 			log.warn("searchMoviesByTitle failed for '{}': {}", q, e.getMessage());
 			return List.of();

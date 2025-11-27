@@ -104,10 +104,15 @@ public class XtreamCodesUtils {
         if (name == null)
             return "";
         int idx = name.indexOf('|');
+        int sepLen = 1;
         if (idx == -1)
             idx = name.indexOf('▎');
-        if (idx != -1 && idx + 1 < name.length()) {
-            return name.substring(idx + 1).trim();
+        if (idx == -1) {
+            idx = name.indexOf(" - ");
+            sepLen = 3;
+        }
+        if (idx != -1 && idx + sepLen < name.length()) {
+            return name.substring(idx + sepLen).trim();
         }
         return name.trim();
     }

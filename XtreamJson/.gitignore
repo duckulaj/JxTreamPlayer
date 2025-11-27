@@ -3,7 +3,7 @@
 build/
 
 # Data
-data/
+/data/
 # Maven
 .mvn/wrapper/maven-wrapper.jar
 !/.mvn/wrapper/maven-wrapper.properties
