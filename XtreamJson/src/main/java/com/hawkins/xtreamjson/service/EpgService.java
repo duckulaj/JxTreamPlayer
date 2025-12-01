@@ -11,9 +11,18 @@ import java.net.URL;
 
 import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.hawkins.xtreamjson.data.EpgContainer;
 import com.hawkins.xtreamjson.model.IptvProvider;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class EpgService {
     private final IptvProviderService iptvProviderService;
 
@@ -64,6 +73,34 @@ public class EpgService {
             if (connection != null) {
                 connection.disconnect();
             }
+        }
+    }
+
+    private static final String EPG_FILE_PATH = "epg.xml";
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss Z");
+
+    public EpgContainer loadEpgData() {
+        File file = new File(EPG_FILE_PATH);
+        if (!file.exists()) {
+            log.error("EPG file not found at {}", EPG_FILE_PATH);
+            return null;
+        }
+
+        XmlMapper xmlMapper = new XmlMapper();
+        try {
+            return xmlMapper.readValue(file, EpgContainer.class);
+        } catch (IOException e) {
+            log.error("Error parsing EPG XML", e);
+            return null;
+        }
+    }
+
+    public LocalDateTime parseEpgDate(String dateStr) {
+        try {
+            return LocalDateTime.parse(dateStr, DATE_FORMATTER);
+        } catch (Exception e) {
+            log.error("Error parsing date: {}", dateStr, e);
+            return null;
         }
     }
 }

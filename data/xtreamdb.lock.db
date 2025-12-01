@@ -1,0 +1,6 @@
+#FileLock
+#Mon Dec 01 18:57:15 GMT 2025
+hostName=CM-AMD-LINUX
+id=19adb46ad2ae86e43a952cbc91d32aa918b56c47461
+method=file
+server=127.0.1.1\:34937

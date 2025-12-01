@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>EPG</title>
+    <link rel="stylesheet" th:href="@{/css/index.css}">
+
+</head>
+<body>
+    <div class="epg-container">
+        <!-- Left Column: Channels -->
+        <div class="channel-column">
+            <div class="channel-row" style="height: 40px; background-color: #333;">
+                <!-- Empty corner -->
+            </div>
+            <div th:each="channel : ${channels}" class="channel-row">
+                <img th:if="${channel.icon != null}" th:src="${channel.icon.src}" style="width: 30px; height: 30px; margin-right: 10px;">
+                <span th:text="${channel.displayName}">Channel Name</span>
+            </div>
+        </div>
+
+        <!-- Right Column: Timeline & Programs -->
+        <div class="timeline-area">
+            <!-- Current Time Indicator -->
+            <div class="current-time-indicator" th:style="'left: ' + ${nowOffset} + 'px;'"></div>
+
+            <!-- Timeline Header -->
+            <div class="timeline-header">
+                <div th:each="slot : ${timelineSlots}" 
+                     th:text="${slot}" 
+                     style="width: 120px; flex-shrink: 0; padding-left: 5px; border-right: 1px solid #444;">
+                </div>
+            </div>
+
+            <!-- Program Rows -->
+            <div th:each="channel : ${channels}" class="program-row">
+                <th:block th:if="${programmesByChannel.containsKey(channel.id)}">
+                    <a th:each="prog : ${programmesByChannel.get(channel.id)}" 
+                       th:href="${prog.streamUrl != null} ? @{/stream.html(url=${prog.streamUrl},title=${prog.title})} : '#'"
+                       class="program-item"
+                       th:text="${prog.title}"
+                       th:title="${prog.title + ' - ' + prog.desc}"
+                       th:style="${prog.style} + ' display: block; text-decoration: none; color: inherit;'">
+                    </a>
+                </th:block>
+                <div th:unless="${programmesByChannel.containsKey(channel.id)}" style="padding: 10px;">
+                    No Data
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
