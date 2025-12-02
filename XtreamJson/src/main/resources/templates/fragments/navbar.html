@@ -12,13 +12,14 @@
       <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
         <li class="nav-item">
           <a class="btn btn-outline-light my-1 px-3 rounded-pill transition" href="javascript:void(0)" 
-             hx-get="/liveCategoriesDropdown" 
-             hx-target="#live-category-dropdown" 
+             hx-get="/epgFragment" 
+             hx-target="#epg-container" 
              hx-swap="innerHTML"
              onclick="
-                if (!document.getElementById('live-category-dropdown')) { window.location.href = '/?show=live'; return false; }
+                if (!document.getElementById('epg-container')) { window.location.href = '/?show=epg'; return false; }
                 document.getElementById('admin-properties-container').innerHTML='';
                 document.getElementById('providers-container').innerHTML='';
+                document.getElementById('live-category-dropdown').innerHTML='';
                 document.getElementById('movie-category-dropdown').innerHTML='';
                 document.getElementById('series-category-dropdown').innerHTML='';
                 document.getElementById('series-list-container').innerHTML='';
@@ -27,7 +28,7 @@
                 document.getElementById('movie-category-items').innerHTML='';
                 document.getElementById('live-category-items').innerHTML='';
              ">
-            <i class="bi bi-tv"></i> Live
+            <i class="bi bi-tv"></i> EPG
           </a>
         </li>
         <li class="nav-item">
