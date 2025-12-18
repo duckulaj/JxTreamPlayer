@@ -1,20 +1,19 @@
 package com.hawkins.xtreamjson.controller;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.hawkins.xtreamjson.data.LiveStream;
-import com.hawkins.xtreamjson.repository.LiveStreamRepository;
-import com.hawkins.xtreamjson.service.ApplicationPropertiesService;
-import com.hawkins.xtreamjson.service.IptvProviderService;
-import com.hawkins.xtreamjson.util.StreamUrlHelper;
-import com.hawkins.xtreamjson.util.XstreamCredentials;
+import com.hawkins.xtreamjson.data.MovieCategory;
+import com.hawkins.xtreamjson.data.MovieStream;
+import com.hawkins.xtreamjson.service.ApiService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,79 +22,42 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ApiController {
 
-    private final LiveStreamRepository liveStreamRepository;
-    private final ApplicationPropertiesService applicationPropertiesService;
-    private final IptvProviderService providerService;
+    private final ApiService apiService;
 
-    public ApiController(LiveStreamRepository liveStreamRepository,
-            ApplicationPropertiesService applicationPropertiesService,
-            IptvProviderService providerService) {
-        this.liveStreamRepository = liveStreamRepository;
-        this.applicationPropertiesService = applicationPropertiesService;
-        this.providerService = providerService;
+    public ApiController(ApiService apiService) {
+        this.apiService = apiService;
+    }
+
+    @GetMapping(value = "/epg.xml", produces = MediaType.APPLICATION_XML_VALUE)
+    public ResponseEntity<ByteArrayResource> getEpgXml() {
+        byte[] xmlBytes = apiService.generateFilteredEpgXml();
+
+        if (xmlBytes == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_XML);
+        headers.setContentLength(xmlBytes.length);
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=epg.xml");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(new ByteArrayResource(xmlBytes));
     }
 
     @GetMapping("/getLiveChannels")
     public List<LiveStream> getLiveChannels() {
-        String includedCountries = applicationPropertiesService.getCurrentProperties().getIncludedCountries();
-        List<LiveStream> allStreams = liveStreamRepository.findAll();
+        return apiService.getFilteredLiveChannels();
+    }
 
-        // Parse included countries
-        List<String> prefixes = new ArrayList<>();
-        if (includedCountries != null && !includedCountries.isEmpty()) {
-            for (String p : includedCountries.split(",")) {
-                prefixes.add(p.trim());
-            }
-        }
+    @GetMapping("/getMovieCategories")
+    public List<MovieCategory> getMovieCategories() {
+        return apiService.getFilteredMovieCategories();
+    }
 
-        List<LiveStream> filteredStreams;
-        if (!prefixes.isEmpty()) {
-            filteredStreams = allStreams.stream()
-                    .filter(stream -> {
-                        String name = stream.getName();
-                        if (name == null)
-                            return false;
-                        for (String prefix : prefixes) {
-                            if (name.startsWith(prefix)) {
-                                return true;
-                            }
-                        }
-                        return false;
-                    })
-                    .collect(Collectors.toList());
-        } else {
-            filteredStreams = new ArrayList<>(allStreams);
-        }
-
-        // Populate direct source URLs
-        Optional<XstreamCredentials> credentialsOpt = providerService.getSelectedProvider()
-                .map(p -> new XstreamCredentials(p.getApiUrl(), p.getUsername(), p.getPassword()));
-
-        // Use empty credentials if no provider selected, to avoid null pointers, though
-        // URLs won't work
-        XstreamCredentials credentials = credentialsOpt.orElse(new XstreamCredentials("", "", ""));
-
-        for (LiveStream stream : filteredStreams) {
-            // Clean the name (remove prefix and colon) similar to EpgProcessorService
-            // Note: EpgProcessorService cleans EpgChannel.displayName.
-            // Here we are modifying LiveStream.name which acts as the display name.
-            // We should probably do it to be consistent if these are "channels" to the
-            // user.
-            String name = stream.getName();
-            int colonIndex = name.indexOf(':');
-            if (colonIndex != -1 && colonIndex < name.length() - 1) {
-                String cleanedName = name.substring(colonIndex + 1).trim();
-                stream.setName(cleanedName);
-            }
-
-            String url = StreamUrlHelper.buildLiveUrl(
-                    credentials.getApiUrl(),
-                    credentials.getUsername(),
-                    credentials.getPassword(),
-                    stream);
-            stream.setDirectSource(url);
-        }
-
-        return filteredStreams;
+    @GetMapping("/getMovies")
+    public List<MovieStream> getMovies(@org.springframework.web.bind.annotation.RequestParam String categoryId) {
+        return apiService.getFilteredMoviesByCategoryId(categoryId);
     }
 }
