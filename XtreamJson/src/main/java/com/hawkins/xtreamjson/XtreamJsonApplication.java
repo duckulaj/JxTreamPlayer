@@ -12,10 +12,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication
-@ComponentScan(basePackages = {"com.hawkins.xtreamjson"})
+@ComponentScan(basePackages = { "com.hawkins.xtreamjson" })
 @EnableAsync
 @EnableJpaRepositories(bootstrapMode = BootstrapMode.DEFAULT)
 @EnableScheduling
+@org.springframework.cache.annotation.EnableCaching
 @EnableAspectJAutoProxy(proxyTargetClass = true)
 public class XtreamJsonApplication {
     public static void main(String[] args) {

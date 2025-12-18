@@ -30,7 +30,7 @@
       <div class="row">
         <div class="col-2 mb-2" th:each="movie : ${moviePage.content}">
           <a th:href="@{/stream.html(url=${movie.directSource},title=${movie.name})}" style="text-decoration:none;color:inherit;">
-            <div class="card h-100 clickable-movie-card">
+            <div class="card h-100 clickable-movie-card" th:attr="data-tmdb=${movie.tmdb}">
               <img th:if="${movie.streamIcon != null and !#strings.isEmpty(movie.streamIcon)}"
                    th:src="${movie.streamIcon}"
                    class="card-img-top" alt="Movie Thumbnail">

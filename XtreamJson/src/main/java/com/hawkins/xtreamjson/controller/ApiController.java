@@ -23,9 +23,11 @@ import lombok.extern.slf4j.Slf4j;
 public class ApiController {
 
     private final ApiService apiService;
+    private final com.hawkins.xtreamjson.service.TmdbService tmdbService;
 
-    public ApiController(ApiService apiService) {
+    public ApiController(ApiService apiService, com.hawkins.xtreamjson.service.TmdbService tmdbService) {
         this.apiService = apiService;
+        this.tmdbService = tmdbService;
     }
 
     @GetMapping(value = "/epg.xml", produces = MediaType.APPLICATION_XML_VALUE)
@@ -59,5 +61,12 @@ public class ApiController {
     @GetMapping("/getMovies")
     public List<MovieStream> getMovies(@org.springframework.web.bind.annotation.RequestParam String categoryId) {
         return apiService.getFilteredMoviesByCategoryId(categoryId);
+    }
+
+    @GetMapping("/tmdb/summary")
+    public java.util.Map<String, String> getTmdbSummary(
+            @org.springframework.web.bind.annotation.RequestParam String id) {
+        String summary = tmdbService.getMovieSummary(id);
+        return java.util.Collections.singletonMap("overview", summary != null ? summary : "No overview available.");
     }
 }

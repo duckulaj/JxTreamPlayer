@@ -69,3 +69,11 @@
   cursor: pointer;
   color: #fff;
 }
+
+/* TMDB Hover Popover Styles */
+.tmdb-popover {
+  --bs-popover-bg: #ffffcc; /* Pale yellow */
+  --bs-popover-header-bg: #feffb0; /* Slightly darker pale yellow */
+  --bs-popover-body-color: #212529; /* Dark text */
+  --bs-popover-header-color: #212529;
+}

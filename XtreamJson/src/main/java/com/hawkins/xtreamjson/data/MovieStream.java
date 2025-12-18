@@ -31,7 +31,7 @@ public class MovieStream {
     @JsonProperty("rating")
     private String rating;
     @JsonProperty("rating_5based")
-    private float rating5Based;
+    private Float rating5Based;
     @JsonProperty("tmdb")
     private String tmdb;
     @JsonProperty("trailer")
