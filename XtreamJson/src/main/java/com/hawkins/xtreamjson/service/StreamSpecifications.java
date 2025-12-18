@@ -40,10 +40,19 @@ public class StreamSpecifications {
             if (includedSet == null || includedSet.isEmpty()) {
                 return cb.conjunction();
             }
-            Predicate[] predicates = includedSet.stream()
-                    .map(prefix -> cb.like(cb.upper(root.get("name")), prefix.toUpperCase() + "%"))
-                    .toArray(Predicate[]::new);
-            return cb.or(predicates);
+
+            java.util.List<Predicate> allPredicates = new java.util.ArrayList<>();
+
+            for (String prefix : includedSet) {
+                String upperPrefix = prefix.toUpperCase();
+                for (String sep : com.hawkins.xtreamjson.util.XtreamCodesUtils.SEPARATORS) {
+                    allPredicates.add(cb.like(cb.upper(root.get("name")), upperPrefix + sep + "%"));
+                }
+                // Also match exact name if it's just the prefix
+                allPredicates.add(cb.equal(cb.upper(root.get("name")), upperPrefix));
+            }
+
+            return cb.or(allPredicates.toArray(new Predicate[0]));
         };
     }
 

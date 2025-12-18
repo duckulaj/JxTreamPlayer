@@ -138,6 +138,7 @@ public class JsonService {
 
 	@TrackExecutionTime
 	public void retreiveJsonData() {
+		java.util.Set<String> discoveredPrefixes = java.util.Collections.synchronizedSet(new java.util.HashSet<>());
 		try {
 			var providerOpt = providerService.getSelectedProvider();
 			if (providerOpt.isEmpty()) {
@@ -179,6 +180,11 @@ public class JsonService {
 					HttpResult streams = getWithRetry(liveStreamsUrl, creds, maxRetries);
 					if (cats.is2xx() && cats.body != null) {
 						List<LiveCategory> list = liveCategoryReader.readValue(cats.body);
+						for (LiveCategory cat : list) {
+							String pfx = XtreamCodesUtils.extractPreface(cat.getCategoryName());
+							if (pfx != null && !discoveredPrefixes.contains(pfx))
+								discoveredPrefixes.add(pfx);
+						}
 						liveCategoryRepository.saveAll(list);
 						log.info("Live Categories: {}", list.size());
 					}
@@ -204,6 +210,11 @@ public class JsonService {
 					HttpResult streams = getWithRetry(movieStreamsUrl, creds, maxRetries);
 					if (cats.is2xx() && cats.body != null) {
 						List<MovieCategory> list = movieCategoryReader.readValue(cats.body);
+						for (MovieCategory cat : list) {
+							String pfx = XtreamCodesUtils.extractPreface(cat.getCategoryName());
+							if (pfx != null && !discoveredPrefixes.contains(pfx))
+								discoveredPrefixes.add(pfx);
+						}
 						movieCategoryRepository.saveAll(list);
 						log.info("Movie Categories: {}", list.size());
 					}
@@ -218,9 +229,15 @@ public class JsonService {
 			}, executor);
 
 			CompletableFuture<Void> seriesTask = CompletableFuture
-					.runAsync(() -> fetchAndSaveSeries(creds, seriesCatsUrl), executor);
+					.runAsync(() -> fetchAndSaveSeries(creds, seriesCatsUrl, discoveredPrefixes), executor);
 
 			CompletableFuture.allOf(liveTask, movieTask, seriesTask).join();
+
+			// Update available prefixes in ApplicationProperties
+			ApplicationProperties props = applicationPropertiesService.getCurrentProperties();
+			props.setAvailablePrefixes(String.join(",", new java.util.TreeSet<>(discoveredPrefixes)));
+			applicationPropertiesService.updateProperties(props);
+
 			log.info("Finished");
 		} catch (Exception e) {
 			log.error("Top-level error in retreiveJsonData()", e);
@@ -228,7 +245,8 @@ public class JsonService {
 	}
 
 	@TrackExecutionTime
-	public void fetchAndSaveSeries(XstreamCredentials creds, String seriesCatsUrl) {
+	public void fetchAndSaveSeries(XstreamCredentials creds, String seriesCatsUrl,
+			java.util.Set<String> discoveredPrefixes) {
 		ApplicationProperties props = applicationPropertiesService.getCurrentProperties();
 		final int SERIES_INFO_MAX_INFLIGHT = props.getSeriesInfoMaxInflight();
 		final int BATCH_SIZE = props.getBatchSize();
@@ -282,6 +300,11 @@ public class JsonService {
 				return;
 			}
 			List<SeriesCategory> categories = seriesCategoryReader.readValue(catsRes.body);
+			for (SeriesCategory cat : categories) {
+				String pfx = XtreamCodesUtils.extractPreface(cat.getCategoryName());
+				if (pfx != null && !discoveredPrefixes.contains(pfx))
+					discoveredPrefixes.add(pfx);
+			}
 			categoriesQ.addAll(categories);
 
 			// Gather unique series IDs across all categories

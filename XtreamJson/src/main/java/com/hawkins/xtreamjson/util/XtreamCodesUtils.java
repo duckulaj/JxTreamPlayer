@@ -100,21 +100,66 @@ public class XtreamCodesUtils {
      * movie title.
      * E.g. "EN ▎ Cursed" or "EN | Cursed" -> "Cursed"
      */
+    /**
+     * Removes language prefix and separators from the title.
+     * E.g. "EN ▎ Cursed", "EN | Cursed", "EN - Cursed" -> "Cursed"
+     */
+    // Common separators used for parsing titles and categories
+    public static final String[] SEPARATORS = { " - ", " | ", "|", "▎", " : ", ":" };
+
+    /**
+     * Removes language prefix and separators from the title.
+     * E.g. "EN ▎ Cursed", "EN | Cursed", "EN - Cursed" -> "Cursed"
+     */
     public static String cleanTitle(String name) {
         if (name == null)
             return "";
-        int idx = name.indexOf('|');
-        int sepLen = 1;
-        if (idx == -1)
-            idx = name.indexOf('▎');
-        if (idx == -1) {
-            idx = name.indexOf(" - ");
-            sepLen = 3;
+
+        int bestIdx = -1;
+        int sepLen = 0;
+
+        for (String sep : SEPARATORS) {
+            int idx = name.indexOf(sep);
+            if (idx != -1 && (bestIdx == -1 || idx < bestIdx)) {
+                bestIdx = idx;
+                sepLen = sep.length();
+            }
         }
-        if (idx != -1 && idx + sepLen < name.length()) {
-            return name.substring(idx + sepLen).trim();
+
+        if (bestIdx != -1 && bestIdx + sepLen < name.length()) {
+            return name.substring(bestIdx + sepLen).trim();
         }
+
         return name.trim();
+    }
+
+    /**
+     * Extracts preface identified by separators.
+     * E.g. "EN - Sports" -> "EN", "* - UK" -> "UK"
+     */
+    @SuppressWarnings("unused") // Used in JsonService and internal logic
+    public static String extractPreface(String name) {
+        if (name == null)
+            return null;
+
+        int bestIdx = -1;
+
+        for (String sep : SEPARATORS) {
+            int idx = name.indexOf(sep);
+            if (idx != -1 && (bestIdx == -1 || idx < bestIdx)) {
+                bestIdx = idx;
+            }
+        }
+
+        if (bestIdx != -1) {
+            String prefix = name.substring(0, bestIdx).trim();
+            // Remove leading "*" if present
+            if (prefix.startsWith("*")) {
+                prefix = prefix.substring(1).trim();
+            }
+            return (prefix != null && !prefix.isEmpty()) ? prefix.toUpperCase() : null;
+        }
+        return null;
     }
 
     // Helper to get includedCountries as a Set<String>
@@ -136,13 +181,18 @@ public class XtreamCodesUtils {
     public static boolean isIncluded(String name, java.util.Set<String> includedSet) {
         if (name == null || name.isEmpty() || includedSet.isEmpty())
             return false;
-        String upperName = name.toUpperCase();
-        for (String prefix : includedSet) {
-            if (upperName.startsWith(prefix)) {
-                return true;
-            }
+
+        String preface = extractPreface(name);
+        if (preface != null) {
+            return includedSet.contains(preface.toUpperCase());
         }
-        return false;
+
+        // Fallback: If no recognized preface structure, maybe it's the whole name?
+        // Or should we stay strict?
+        // Given the user's intent to select prefixes, strict matching seems better.
+        // But for safety, let's also check if the whole name is in the set
+        // (for cases where the user manually added a country name)
+        return includedSet.contains(name.toUpperCase());
     }
 
     public static String printNow() {

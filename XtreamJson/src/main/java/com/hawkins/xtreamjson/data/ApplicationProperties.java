@@ -16,6 +16,7 @@ public class ApplicationProperties {
     private int maxRetries = 5;
     private String includedCountries = "EN,UK";
     private String excludedTitles = "";
+    private String availablePrefixes = "";
 
     // Getters and setters
     public Long getId() {
@@ -64,5 +65,13 @@ public class ApplicationProperties {
 
     public void setExcludedTitles(String v) {
         this.excludedTitles = v;
+    }
+
+    public String getAvailablePrefixes() {
+        return availablePrefixes;
+    }
+
+    public void setAvailablePrefixes(String v) {
+        this.availablePrefixes = v;
     }
 }
