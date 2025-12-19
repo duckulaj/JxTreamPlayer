@@ -4,4 +4,5 @@ XtreamJson/.classpath
 XtreamJson/.classpath
 XtreamJson/.factorypath
 hls_output/
-data/
+/data/
+data/xtreamdb.lock.db

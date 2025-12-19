@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import com.hawkins.xtreamjson.data.ApplicationProperties;
 import com.hawkins.xtreamjson.service.ApplicationPropertiesService;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Controller
 @RequestMapping("/admin/properties")
 public class ApplicationPropertiesController {

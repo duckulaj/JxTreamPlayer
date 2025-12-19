@@ -14,8 +14,11 @@ public class ApplicationProperties {
     private int seriesInfoMaxInflight = 8;
     private int batchSize = 500;
     private int maxRetries = 5;
+    @jakarta.persistence.Column(columnDefinition = "TEXT")
     private String includedCountries = "EN,UK";
+    @jakarta.persistence.Column(columnDefinition = "TEXT")
     private String excludedTitles = "";
+    @jakarta.persistence.Column(columnDefinition = "TEXT")
     private String availablePrefixes = "";
 
     // Getters and setters

@@ -36,6 +36,7 @@ public class ApplicationPropertiesService {
             existing.setBatchSize(updated.getBatchSize());
             existing.setMaxRetries(updated.getMaxRetries());
             existing.setIncludedCountries(updated.getIncludedCountries());
+            existing.setExcludedTitles(updated.getExcludedTitles());
             existing.setAvailablePrefixes(updated.getAvailablePrefixes());
             return repository.save(existing);
         } else {
