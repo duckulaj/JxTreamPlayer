@@ -71,7 +71,7 @@ public class JsonService {
 	private final EpisodeRepository episodeRepository;
 	private final ApplicationPropertiesService applicationPropertiesService;
 
-	private static final int DEFAULT_THREAD_POOL_SIZE = 16;
+	private static final int DEFAULT_THREAD_POOL_SIZE = 32;
 	private static final ExecutorService executor = Executors.newFixedThreadPool(
 			Integer.parseInt(
 					System.getenv().getOrDefault("XTREAM_THREAD_POOL_SIZE", String.valueOf(DEFAULT_THREAD_POOL_SIZE))));
