@@ -1,21 +1,45 @@
-<div th:fragment="navbar">
-<nav class="navbar navbar-expand-lg navbar-dark bg-gradient shadow rounded fixed-top" style="background: linear-gradient(90deg, #232526 0%, #414345 100%);">
-  <div class="container-fluid">
-    <a class="navbar-brand d-flex align-items-center" href="/">
-      <img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/icons/film.svg" alt="XtreamJson" width="32" height="32" class="me-2">
-      <span style="font-weight: bold; font-size: 1.4rem; letter-spacing: 1px;">XtreamJson</span>
-    </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarActions" aria-controls="navbarActions" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarActions">
-      <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
-        <li class="nav-item">
-          <a class="btn btn-outline-light my-1 px-3 rounded-pill transition" href="javascript:void(0)" 
-             hx-get="/epgFragment" 
-             hx-target="#epg-container" 
-             hx-swap="innerHTML"
-             onclick="
+<div
+  th:fragment="navbar"
+  xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+>
+  <nav
+    class="navbar navbar-expand-lg navbar-dark bg-gradient shadow rounded fixed-top"
+    style="background: linear-gradient(90deg, #232526 0%, #414345 100%)"
+  >
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center" href="/">
+        <img
+          src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/icons/film.svg"
+          alt="XtreamJson"
+          width="32"
+          height="32"
+          class="me-2"
+        />
+        <span style="font-weight: bold; font-size: 1.4rem; letter-spacing: 1px"
+          >XtreamJson</span
+        >
+      </a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarActions"
+        aria-controls="navbarActions"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarActions">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
+          <li class="nav-item">
+            <a
+              class="btn btn-outline-light my-1 px-3 rounded-pill transition"
+              href="javascript:void(0)"
+              hx-get="/epgFragment"
+              hx-target="#epg-container"
+              hx-swap="innerHTML"
+              onclick="
                 if (!document.getElementById('epg-container')) { window.location.href = '/?show=epg'; return false; }
                 document.getElementById('admin-properties-container').innerHTML='';
                 document.getElementById('providers-container').innerHTML='';
@@ -27,16 +51,19 @@
                 document.getElementById('movie-category-container').innerHTML='';
                 document.getElementById('movie-category-items').innerHTML='';
                 document.getElementById('live-category-items').innerHTML='';
-             ">
-            <i class="bi bi-tv"></i> EPG
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="btn btn-outline-light my-1 px-3 rounded-pill transition" href="javascript:void(0)" 
-             hx-get="/movieCategoriesDropdown" 
-             hx-target="#movie-category-dropdown" 
-             hx-swap="innerHTML"
-             onclick="
+             "
+            >
+              <i class="bi bi-tv"></i> EPG
+            </a>
+          </li>
+          <li class="nav-item">
+            <a
+              class="btn btn-outline-light my-1 px-3 rounded-pill transition"
+              href="javascript:void(0)"
+              hx-get="/movieCategoriesDropdown"
+              hx-target="#movie-category-dropdown"
+              hx-swap="innerHTML"
+              onclick="
                 if (!document.getElementById('movie-category-dropdown')) { window.location.href = '/?show=movie'; return false; }
                 document.getElementById('admin-properties-container').innerHTML='';
                 document.getElementById('providers-container').innerHTML='';
@@ -47,16 +74,19 @@
                 document.getElementById('movie-category-container').innerHTML='';
                 document.getElementById('movie-category-items').innerHTML='';
                 document.getElementById('live-category-items').innerHTML='';
-             ">
-            <i class="bi bi-film"></i> Movies
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="btn btn-outline-light my-1 px-3 rounded-pill transition" href="javascript:void(0)" 
-             hx-get="/seriesCategoriesDropdown" 
-             hx-target="#series-category-dropdown" 
-             hx-swap="innerHTML"
-             onclick="
+             "
+            >
+              <i class="bi bi-film"></i> Movies
+            </a>
+          </li>
+          <li class="nav-item">
+            <a
+              class="btn btn-outline-light my-1 px-3 rounded-pill transition"
+              href="javascript:void(0)"
+              hx-get="/seriesCategoriesDropdown"
+              hx-target="#series-category-dropdown"
+              hx-swap="innerHTML"
+              onclick="
                 if (!document.getElementById('series-category-dropdown')) { window.location.href = '/?show=series'; return false; }
                 document.getElementById('admin-properties-container').innerHTML='';
                 document.getElementById('providers-container').innerHTML='';
@@ -67,23 +97,37 @@
                 document.getElementById('movie-category-container').innerHTML='';
                 document.getElementById('movie-category-items').innerHTML='';
                 document.getElementById('live-category-items').innerHTML='';
-             ">
-            <i class="bi bi-collection-play"></i> Series
-          </a>
-        </li>
-        <li style="margin-left: 0.5rem;"></li>
-        <!-- Settings Dropdown -->
-        <li class="nav-item dropdown ms-2">
-          <a class="nav-link dropdown-toggle d-flex align-items-center px-3 rounded-pill transition" href="#" id="settingsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="padding: 0.5rem 1rem;">
-            <i class="bi bi-gear-fill me-2"></i> Settings
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end shadow rounded animate__animated animate__fadeIn" aria-labelledby="settingsDropdown">
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="javascript:void(0)" 
-                 hx-get="/providers/fragment" 
-                 hx-target="#providers-container" 
-                 hx-swap="innerHTML"
-                 onclick="
+             "
+            >
+              <i class="bi bi-collection-play"></i> Series
+            </a>
+          </li>
+          <li style="margin-left: 0.5rem"></li>
+          <!-- Settings Dropdown -->
+          <li class="nav-item dropdown ms-2" sec:authorize="hasRole('ADMIN')">
+            <a
+              class="nav-link dropdown-toggle d-flex align-items-center px-3 rounded-pill transition"
+              href="#"
+              id="settingsDropdown"
+              role="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+              style="padding: 0.5rem 1rem"
+            >
+              <i class="bi bi-gear-fill me-2"></i> Settings
+            </a>
+            <ul
+              class="dropdown-menu dropdown-menu-end shadow rounded animate__animated animate__fadeIn"
+              aria-labelledby="settingsDropdown"
+            >
+              <li>
+                <a
+                  class="dropdown-item d-flex align-items-center"
+                  href="javascript:void(0)"
+                  hx-get="/providers/fragment"
+                  hx-target="#providers-container"
+                  hx-swap="innerHTML"
+                  onclick="
                     if (!document.getElementById('providers-container')) { window.location.href = '/?show=providers'; return false; }
                     document.getElementById('admin-properties-container').innerHTML='';
                     document.getElementById('live-category-dropdown').innerHTML='';
@@ -94,16 +138,19 @@
                     document.getElementById('movie-category-container').innerHTML='';
                     document.getElementById('movie-category-items').innerHTML='';
                     document.getElementById('live-category-items').innerHTML='';
-                 ">
-                <i class="bi bi-hdd-network me-2"></i> Providers
-              </a>
-            </li>
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="javascript:void(0)"
-                 hx-get="/admin/properties"
-                 hx-target="#admin-properties-container"
-                 hx-swap="innerHTML"
-                 onclick="
+                 "
+                >
+                  <i class="bi bi-hdd-network me-2"></i> Providers
+                </a>
+              </li>
+              <li>
+                <a
+                  class="dropdown-item d-flex align-items-center"
+                  href="javascript:void(0)"
+                  hx-get="/admin/properties"
+                  hx-target="#admin-properties-container"
+                  hx-swap="innerHTML"
+                  onclick="
                     if (!document.getElementById('admin-properties-container')) { window.location.href = '/admin/properties'; return false; }
                     document.getElementById('admin-properties-container').innerHTML='';
                     document.getElementById('providers-container').innerHTML='';
@@ -115,114 +162,181 @@
                     document.getElementById('movie-category-container').innerHTML='';
                     document.getElementById('movie-category-items').innerHTML='';
                     document.getElementById('live-category-items').innerHTML='';
-                 ">
-                <i class="bi bi-sliders me-2"></i> Properties
-              </a>
-            </li>
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="#"
-                 hx-get="/resetDatabase"
-                 hx-target="#reset-status"
-                 hx-swap="innerHTML"
-                 onclick="document.getElementById('reset-status').innerHTML='Updating database, please wait...'; return false;">
-                <i class="bi bi-arrow-repeat me-2"></i> Reset Database
-              </a>
-            </li>
-            <li><hr class="dropdown-divider"></li>
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="#" hx-get="/createStreams" hx-target="body" hx-swap="none">
-                <i class="bi bi-broadcast me-2"></i> Create Streams
-              </a>
-            </li>
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="#" hx-get="/playlist.m3u8" hx-target="body" hx-swap="none">
-                <i class="bi bi-music-note-list me-2"></i> Create Playlist
-              </a>
-            </li>
-            <li>
-              <a class="dropdown-item d-flex align-items-center" href="#"
-                 hx-get="/admin/viewLog"
-                 hx-target="#admin-properties-container"
-                 hx-swap="innerHTML">
-                <i class="bi bi-file-earmark-text me-2"></i> View Log
-              </a>
-            </li>
-          </ul>
-        </li>
-        <!-- End Settings Dropdown -->
-        <li class="nav-item ms-2">
-          <button class="btn btn-outline-light my-1 px-3 rounded-pill transition" id="search-btn" type="button">
-            <i class="bi bi-search"></i> Search
-          </button>
-        </li>
-        <li class="nav-item ms-2" id="search-box-container" style="display:none;">
-          <input type="text" class="form-control" id="search-box" placeholder="Search movies or series... (min 2 chars)" autocomplete="off" style="width: 260px; margin-top: 6px;">
-        </li>
-      </ul>
+                 "
+                >
+                  <i class="bi bi-sliders me-2"></i> Properties
+                </a>
+              </li>
+              <li>
+                <a
+                  class="dropdown-item d-flex align-items-center"
+                  href="#"
+                  hx-get="/resetDatabase"
+                  hx-target="#reset-status"
+                  hx-swap="innerHTML"
+                  onclick="document.getElementById('reset-status').innerHTML='Updating database, please wait...'; return false;"
+                >
+                  <i class="bi bi-arrow-repeat me-2"></i> Reset Database
+                </a>
+              </li>
+              <li><hr class="dropdown-divider" /></li>
+              <li>
+                <a
+                  class="dropdown-item d-flex align-items-center"
+                  href="#"
+                  hx-get="/createStreams"
+                  hx-target="body"
+                  hx-swap="none"
+                >
+                  <i class="bi bi-broadcast me-2"></i> Create Streams
+                </a>
+              </li>
+              <li>
+                <a
+                  class="dropdown-item d-flex align-items-center"
+                  href="#"
+                  hx-get="/playlist.m3u8"
+                  hx-target="body"
+                  hx-swap="none"
+                >
+                  <i class="bi bi-music-note-list me-2"></i> Create Playlist
+                </a>
+              </li>
+              <li>
+                <a
+                  class="dropdown-item d-flex align-items-center"
+                  href="#"
+                  hx-get="/admin/viewLog"
+                  hx-target="#admin-properties-container"
+                  hx-swap="innerHTML"
+                >
+                  <i class="bi bi-file-earmark-text me-2"></i> View Log
+                </a>
+              </li>
+            </ul>
+          </li>
+          <!-- End Settings Dropdown -->
+
+          <li class="nav-item ms-2" sec:authorize="!isAuthenticated()">
+            <a
+              class="btn btn-outline-light my-1 px-3 rounded-pill transition"
+              href="/login"
+            >
+              <i class="bi bi-person-fill"></i> Login
+            </a>
+          </li>
+          <li class="nav-item ms-2" sec:authorize="isAuthenticated()">
+            <form th:action="@{/logout}" method="post" class="d-flex my-1">
+              <button
+                class="btn btn-outline-light px-3 rounded-pill transition"
+                type="submit"
+              >
+                <i class="bi bi-box-arrow-right"></i> Logout
+              </button>
+            </form>
+          </li>
+          <li class="nav-item ms-2">
+            <button
+              class="btn btn-outline-light my-1 px-3 rounded-pill transition"
+              id="search-btn"
+              type="button"
+            >
+              <i class="bi bi-search"></i> Search
+            </button>
+          </li>
+          <li
+            class="nav-item ms-2"
+            id="search-box-container"
+            style="display: none"
+          >
+            <input
+              type="text"
+              class="form-control"
+              id="search-box"
+              placeholder="Search movies or series... (min 2 chars)"
+              autocomplete="off"
+              style="width: 260px; margin-top: 6px"
+            />
+          </li>
+        </ul>
+      </div>
     </div>
-  </div>
-</nav>
-<style>
-  .navbar {
-    box-shadow: 0 2px 12px rgba(44,62,80,0.12);
-    border-radius: 0 0 16px 16px;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    background: linear-gradient(90deg, #dee2e6 0%, #adb5bd 100%) !important;
-  }
-  .navbar-brand span {
-    color: #343a40;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.10);
-  }
-  .navbar-nav .btn, .navbar-nav .nav-link {
-    color: #343a40 !important;
-    background: #f8f9fa;
-    border: 1px solid #adb5bd;
-    box-shadow: 0 2px 8px rgba(44,62,80,0.15);
-    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-  }
-  .navbar-nav .btn:hover, .navbar-nav .nav-link:hover, .dropdown-item:hover {
-    background: #28a745 !important;
-    color: #fff !important;
-    box-shadow: 0 4px 16px rgba(40,167,69,0.18);
-    border-color: #28a745 !important;
-  }
-  .navbar-nav .active, .navbar-nav .show > .nav-link {
-    background: #28a745 !important;
-    color: #fff !important;
-    box-shadow: 0 4px 16px rgba(40,167,69,0.18);
-    border-color: #28a745 !important;
-  }
-  .dropdown-menu {
-    border-radius: 12px;
-    min-width: 220px;
-    background: #f8f9fa !important;
-    color: #343a40 !important;
-    box-shadow: 0 4px 16px rgba(44,62,80,0.15);
-    animation: fadeIn 0.3s;
-  }
-  .dropdown-item {
-    color: #343a40 !important;
-    background: transparent !important;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(44,62,80,0.12);
-    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-  }
-  .dropdown-item i {
-    font-size: 1.1rem;
-    color: #343a40;
-  }
-  .dropdown-item:hover, .dropdown-item:focus {
-    background: #28a745 !important;
-    color: #fff !important;
-    box-shadow: 0 4px 16px rgba(40,167,69,0.18);
-  }
-  .dropdown-divider {
-    border-color: #adb5bd;
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-</style>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  </nav>
+  <style>
+    .navbar {
+      box-shadow: 0 2px 12px rgba(44, 62, 80, 0.12);
+      border-radius: 0 0 16px 16px;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(90deg, #dee2e6 0%, #adb5bd 100%) !important;
+    }
+    .navbar-brand span {
+      color: #343a40;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    }
+    .navbar-nav .btn,
+    .navbar-nav .nav-link {
+      color: #343a40 !important;
+      background: #f8f9fa;
+      border: 1px solid #adb5bd;
+      box-shadow: 0 2px 8px rgba(44, 62, 80, 0.15);
+      transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    }
+    .navbar-nav .btn:hover,
+    .navbar-nav .nav-link:hover,
+    .dropdown-item:hover {
+      background: #28a745 !important;
+      color: #fff !important;
+      box-shadow: 0 4px 16px rgba(40, 167, 69, 0.18);
+      border-color: #28a745 !important;
+    }
+    .navbar-nav .active,
+    .navbar-nav .show > .nav-link {
+      background: #28a745 !important;
+      color: #fff !important;
+      box-shadow: 0 4px 16px rgba(40, 167, 69, 0.18);
+      border-color: #28a745 !important;
+    }
+    .dropdown-menu {
+      border-radius: 12px;
+      min-width: 220px;
+      background: #f8f9fa !important;
+      color: #343a40 !important;
+      box-shadow: 0 4px 16px rgba(44, 62, 80, 0.15);
+      animation: fadeIn 0.3s;
+    }
+    .dropdown-item {
+      color: #343a40 !important;
+      background: transparent !important;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(44, 62, 80, 0.12);
+      transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    }
+    .dropdown-item i {
+      font-size: 1.1rem;
+      color: #343a40;
+    }
+    .dropdown-item:hover,
+    .dropdown-item:focus {
+      background: #28a745 !important;
+      color: #fff !important;
+      box-shadow: 0 4px 16px rgba(40, 167, 69, 0.18);
+    }
+    .dropdown-divider {
+      border-color: #adb5bd;
+    }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+  />
 </div>

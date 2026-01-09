@@ -137,4 +137,41 @@ public class LogController {
 
         return emitter;
     }
+
+    @GetMapping("/admin/flushLog")
+    @ResponseBody
+    public ResponseEntity<String> flushLog() {
+        Path logPath = Path.of("XstreamJson.log");
+        if (!Files.exists(logPath)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Log file not found");
+        }
+
+        try {
+            // Create backup filename with timestamp
+            String timestamp = new java.text.SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date());
+            Path gzPath = Path.of("logs", "XstreamJson-" + timestamp + ".log.gz");
+
+            // Ensure logs directory exists
+            Files.createDirectories(gzPath.getParent());
+
+            // Compress existing log
+            try (java.io.InputStream in = Files.newInputStream(logPath);
+                    java.io.OutputStream out = Files.newOutputStream(gzPath);
+                    java.util.zip.GZIPOutputStream gzOut = new java.util.zip.GZIPOutputStream(out)) {
+                byte[] buffer = new byte[1024];
+                int len;
+                while ((len = in.read(buffer)) > 0) {
+                    gzOut.write(buffer, 0, len);
+                }
+            }
+
+            // Clear the existing log file
+            Files.writeString(logPath, "", StandardCharsets.UTF_8, java.nio.file.StandardOpenOption.TRUNCATE_EXISTING);
+
+            return ResponseEntity.ok("Log flushed and compressed to " + gzPath.getFileName());
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to flush log: " + e.getMessage());
+        }
+    }
 }
