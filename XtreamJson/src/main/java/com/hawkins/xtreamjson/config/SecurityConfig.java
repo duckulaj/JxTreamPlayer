@@ -22,6 +22,9 @@ public class SecurityConfig {
                         .requestMatchers("/admin/**", "/api/admin/**", "/providers/**", "/resetDatabase",
                                 "/createStreams")
                         .hasRole("ADMIN")
+                        .requestMatchers("/stream.html", "/proxy/**", "/transcode/**", "/css/**", "/js/**",
+                                "/images/**", "/webjars/**", "/")
+                        .permitAll()
                         .anyRequest().permitAll())
                 .formLogin(form -> form.permitAll())
                 .logout(logout -> logout.logoutSuccessUrl("/").permitAll());

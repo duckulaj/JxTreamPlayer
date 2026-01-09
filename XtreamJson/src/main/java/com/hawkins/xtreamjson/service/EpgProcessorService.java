@@ -64,6 +64,14 @@ public class EpgProcessorService {
         // Prepare stream URL map
         Map<String, String> channelStreamUrlMap = buildChannelStreamUrlMap(credentials);
 
+        // Enrich channels with stream URLs
+        for (EpgChannel channel : filteredChannels) {
+            String url = channelStreamUrlMap.get(channel.getId());
+            if (url != null) {
+                channel.setStreamUrl(url);
+            }
+        }
+
         // Process programmes into view models
         Map<String, List<EpgProgrammeViewModel>> programmesByChannel = processProgrammes(
                 epgData.getProgrammes(), filteredChannels, timelineStart, channelStreamUrlMap);

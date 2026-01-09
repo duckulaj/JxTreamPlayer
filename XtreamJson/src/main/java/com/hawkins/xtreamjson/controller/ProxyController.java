@@ -30,40 +30,92 @@ public class ProxyController {
         OutputStream outputStream = null;
 
         try {
+            log.info("Proxying stream: {}", streamUrl);
             URL url = new URI(streamUrl).toURL();
             connection = (HttpURLConnection) url.openConnection();
             connection.setConnectTimeout(15000);
             connection.setReadTimeout(30000);
+            connection.setInstanceFollowRedirects(false); // We handle redirects manually
+
+            // Standard browser-like User-Agent
+            connection.setRequestProperty("User-Agent",
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
 
             // Forward request headers (e.g., Range)
             Enumeration<String> headerNames = request.getHeaderNames();
             while (headerNames.hasMoreElements()) {
                 String headerName = headerNames.nextElement();
                 // Skip headers that should not be forwarded or might conflict
-                if (!headerName.equalsIgnoreCase("Host") && !headerName.equalsIgnoreCase("Connection")) {
+                if (!headerName.equalsIgnoreCase("Host")
+                        && !headerName.equalsIgnoreCase("Connection")
+                        && !headerName.equalsIgnoreCase("User-Agent")) {
                     String headerValue = request.getHeader(headerName);
                     connection.setRequestProperty(headerName, headerValue);
                 }
             }
 
             int responseCode = connection.getResponseCode();
+
+            // Handle Redirects Manually (up to 5 times)
+            int redirectCount = 0;
+            while ((responseCode == HttpURLConnection.HTTP_MOVED_TEMP ||
+                    responseCode == HttpURLConnection.HTTP_MOVED_PERM ||
+                    responseCode == 307 ||
+                    responseCode == 308) && redirectCount < 5) {
+
+                String newUrl = connection.getHeaderField("Location");
+                log.info("Redirecting proxy from {} to {}", url, newUrl);
+
+                // Close previous connection
+                connection.disconnect();
+
+                url = new URI(newUrl).toURL();
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setConnectTimeout(15000);
+                connection.setReadTimeout(30000);
+                connection.setInstanceFollowRedirects(false);
+                connection.setRequestProperty("User-Agent",
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+
+                // Re-apply headers? It's safer to not re-apply Range automatically on redirect
+                // unless confirmed,
+                // but for simple stream proxying, usually we just want to follow the link.
+
+                responseCode = connection.getResponseCode();
+                redirectCount++;
+            }
+
             response.setStatus(responseCode);
 
-            // Forward response headers (e.g., Content-Type, Content-Length, Content-Range)
+            // Forward response headers
             for (Map.Entry<String, List<String>> entry : connection.getHeaderFields().entrySet()) {
                 String key = entry.getKey();
-                if (key != null && !key.equalsIgnoreCase("Transfer-Encoding")) { // Chunked transfer is handled by
-                                                                                 // servlet container
+                if (key != null && !key.equalsIgnoreCase("Transfer-Encoding")
+                        && !key.equalsIgnoreCase("Content-Encoding")) {
+                    // Exclude Content-Encoding to avoid double compression issues if we read raw
+                    // stream
                     for (String value : entry.getValue()) {
                         response.addHeader(key, value);
                     }
                 }
             }
 
+            if (responseCode >= 400) {
+                log.error("Proxy received error code: {}", responseCode);
+                // Try to read error stream to log it
+                try (InputStream err = connection.getErrorStream()) {
+                    if (err != null) {
+                        String errBody = new String(err.readAllBytes());
+                        log.error("Proxy upstream error body: {}", errBody);
+                    }
+                }
+                return;
+            }
+
             inputStream = connection.getInputStream();
             outputStream = response.getOutputStream();
 
-            byte[] buffer = new byte[8192];
+            byte[] buffer = new byte[16384]; // 16KB buffer
             int bytesRead;
             while ((bytesRead = inputStream.read(buffer)) != -1) {
                 outputStream.write(buffer, 0, bytesRead);

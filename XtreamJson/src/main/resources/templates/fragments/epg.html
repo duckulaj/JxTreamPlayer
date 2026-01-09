@@ -54,7 +54,15 @@
           th:unless="${programmesByChannel.containsKey(channel.id)}"
           style="padding: 10px"
         >
-          No Data
+          <a
+            th:if="${channel.streamUrl != null}"
+            th:href="@{/stream.html(url=${channel.streamUrl},title=${channel.displayName})}"
+            style="color: #bbb; text-decoration: underline; cursor: pointer"
+            title="Click to play channel"
+          >
+            No Data
+          </a>
+          <span th:if="${channel.streamUrl == null}">No Data</span>
         </div>
       </div>
     </div>

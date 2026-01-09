@@ -65,68 +65,66 @@
       let streamUrl = injectedUrl || getQueryParam("url");
       let streamTitle = injectedTitle || getQueryParam("title");
 
-      // Auto-proxy if Mixed Content is detected (HTTPS page requesting HTTP stream)
-      if (
-        streamUrl &&
-        window.location.protocol === "https:" &&
-        streamUrl.startsWith("http://")
-      ) {
-        console.log("Mixed content detected. Proxying stream via backend.");
-        streamUrl = "/proxy?url=" + encodeURIComponent(streamUrl);
+      // Helper to safely extract extension ignoring query params
+      function getExtension(url) {
+          try {
+              const u = new URL(url);
+              return u.pathname.split('.').pop().toLowerCase();
+          } catch (e) {
+              return url.split('?')[0].split('.').pop().toLowerCase();
+          }
       }
 
-      // DOM references
-      const errorDiv = document.getElementById("videoError");
-      const player = document.getElementById("player");
-      const urlDisplay = document.getElementById("streamUrlDisplay");
-      const titleDisplay = document.getElementById("movieTitleDisplay");
+      const ext = streamUrl ? getExtension(streamUrl) : "";
+      let finalUrl = streamUrl;
 
-      if (streamUrl) {
-        urlDisplay.textContent = streamUrl;
-        if (streamTitle) {
-          titleDisplay.textContent = streamTitle;
-        }
-        const ext = streamUrl.split(".").pop().toLowerCase();
-
-        if (["mkv", "hevc"].includes(ext) || streamUrl.includes("265")) {
-          showUnsupported(
-            "MKV/HEVC/4K files are not supported in browsers. Use MP4 (H.264/AAC) or HLS (.m3u8)."
-          );
-        } else if (ext === "m3u8") {
-          if (Hls.isSupported()) {
-            if (window.hls) window.hls.destroy(); // cleanup previous instance
-            window.hls = new Hls();
-            window.hls.loadSource(streamUrl);
-            window.hls.attachMedia(player);
-            window.hls.on(Hls.Events.ERROR, () =>
-              showUnsupported("HLS playback failed. Please check the stream.")
-            );
-          } else if (player.canPlayType("application/vnd.apple.mpegurl")) {
-            player.src = streamUrl;
-          } else {
-            showUnsupported("Browser does not support HLS. Use VLC instead.");
-          }
-        } else if (ext === "ts") {
-          const transcodeUrl =
-            "/transcode?url=" + encodeURIComponent(streamUrl);
+      // Logic Flow:
+      // 1. If TS -> Transcode (Server handles fetching, so mixed content is fine).
+      // 2. If Other -> Check Mixed Content -> Proxy if needed.
+      
+      if (ext === "ts") {
+          console.log("TS file detected. Using transcoder.");
+          const transcodeUrl = "/transcode?url=" + encodeURIComponent(streamUrl);
           player.setAttribute("type", "video/mp4");
           player.src = transcodeUrl;
-          player.onerror = () =>
-            showUnsupported(
-              "TS stream could not be played/transcoded. Use VLC instead."
-            );
-        } else {
-          let mime = ext === "webm" ? "video/webm" : "video/mp4";
-          if (player.canPlayType(mime)) {
-            player.setAttribute("type", mime);
-            player.src = streamUrl;
-          } else {
-            showUnsupported("Browser cannot play this file type. Try VLC.");
-          }
-        }
+          
+          player.onerror = () => showUnsupported("TS stream could not be played/transcoded. The server might be unable to reach the stream or ffmpeg failed.");
+
       } else {
-        document.querySelector(".stream-container").innerHTML +=
-          '<div class="alert alert-danger">No stream URL provided. Please check the link.</div>';
+          // Mixed Content Check
+          if (streamUrl && window.location.protocol === "https:" && streamUrl.startsWith("http://")) {
+            console.log("Mixed content detected. Proxying stream via backend.");
+            finalUrl = "/proxy?url=" + encodeURIComponent(streamUrl);
+          }
+          
+          if (["mkv", "hevc"].includes(ext)) {
+               showUnsupported("MKV/HEVC/4K files are not supported in browsers. Use MP4 (H.264/AAC) or HLS (.m3u8).");
+          } else if (ext === "m3u8") {
+              if (Hls.isSupported()) {
+                if (window.hls) window.hls.destroy();
+                window.hls = new Hls();
+                window.hls.loadSource(finalUrl);
+                window.hls.attachMedia(player);
+                window.hls.on(Hls.Events.ERROR, (event, data) => {
+                    if (data.fatal) {
+                        showUnsupported("HLS playback failed. Please check the stream.");
+                    }
+                });
+              } else if (player.canPlayType("application/vnd.apple.mpegurl")) {
+                player.src = finalUrl;
+              } else {
+                showUnsupported("Browser does not support HLS. Use VLC instead.");
+              }
+          } else {
+              // Default (MP4, WebM, etc.)
+              let mime = ext === "webm" ? "video/webm" : "video/mp4";
+              if (player.canPlayType(mime)) {
+                player.setAttribute("type", mime);
+                player.src = finalUrl;
+              } else {
+                showUnsupported("Browser cannot play this file type. Try VLC.");
+              }
+          }
       }
 
       // Centralized error handling

@@ -22,4 +22,6 @@ public class EpgChannel {
         @JacksonXmlProperty(isAttribute = true)
         private String src;
     }
+
+    private String streamUrl;
 }
