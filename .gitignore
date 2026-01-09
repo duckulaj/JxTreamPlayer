@@ -6,3 +6,7 @@ XtreamJson/.factorypath
 hls_output/
 /data/
 data/xtreamdb.lock.db
+Movies/
+Shows/
+epg.xml
+playlist.m3u8

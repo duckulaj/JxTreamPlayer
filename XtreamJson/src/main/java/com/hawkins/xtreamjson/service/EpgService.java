@@ -41,6 +41,8 @@ public class EpgService {
         HttpURLConnection connection = null;
         InputStream inputStream = null;
         FileOutputStream outputStream = null;
+        File tempFile = new File("epg.xml.tmp");
+
         try {
             int bytesRead;
             URL url;
@@ -51,14 +53,14 @@ public class EpgService {
             }
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
-            connection.setConnectTimeout(10000);
-            connection.setReadTimeout(20000);
+            connection.setConnectTimeout(15000);
+            connection.setReadTimeout(90000);
             int responseCode = connection.getResponseCode();
             if (responseCode != 200) {
                 throw new IOException("Failed to download EPG XML: HTTP " + responseCode);
             }
             inputStream = connection.getInputStream();
-            outputStream = new FileOutputStream("epg.xml");
+            outputStream = new FileOutputStream(tempFile);
             byte[] buffer = new byte[8192];
             while ((bytesRead = inputStream.read(buffer)) != -1) {
                 outputStream.write(buffer, 0, bytesRead);
@@ -73,6 +75,17 @@ public class EpgService {
             if (connection != null) {
                 connection.disconnect();
             }
+        }
+
+        File destFile = new File("epg.xml");
+        if (destFile.exists()) {
+            if (!destFile.delete()) {
+                log.warn("Failed to delete existing EPG file before renaming");
+            }
+        }
+        if (!tempFile.renameTo(destFile)) {
+            throw new IOException(
+                    "Failed to rename temp EPG file to " + destFile.getName() + ". Check file permissions.");
         }
     }
 
