@@ -15,35 +15,39 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .authorizeHttpRequests((requests) -> requests
-                        .requestMatchers("/admin/**", "/api/admin/**", "/providers/**", "/resetDatabase",
-                                "/createStreams")
-                        .hasRole("ADMIN")
-                        .requestMatchers("/stream.html", "/proxy/**", "/transcode/**", "/css/**", "/js/**",
-                                "/images/**", "/webjars/**", "/")
-                        .permitAll()
-                        .anyRequest().permitAll())
-                .formLogin(form -> form.permitAll())
-                .logout(logout -> logout.logoutSuccessUrl("/").permitAll());
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+                http
+                                .authorizeHttpRequests((requests) -> requests
+                                                .requestMatchers("/admin/**", "/api/admin/**", "/providers/**",
+                                                                "/resetDatabase",
+                                                                "/createStreams")
+                                                .hasRole("ADMIN")
+                                                .requestMatchers("/stream.html", "/proxy/**", "/transcode/**",
+                                                                "/css/**", "/js/**",
+                                                                "/images/**", "/webjars/**", "/", "/login")
+                                                .permitAll()
+                                                .anyRequest().permitAll())
+                                .formLogin(form -> form
+                                                .loginPage("/login")
+                                                .permitAll())
+                                .logout(logout -> logout.logoutSuccessUrl("/").permitAll());
 
-        return http.build();
-    }
+                return http.build();
+        }
 
-    @Bean
-    public InMemoryUserDetailsManager userDetailsService() {
-        UserDetails admin = User.builder()
-                .username("admin")
-                .password("$2a$05$cRtC6BGeZG/yS42B2J8yye4K.zfozPF3M4TfQ50eLtSeq/xWvz/1a")
-                .roles("ADMIN")
-                .build();
-        return new InMemoryUserDetailsManager(admin);
-    }
+        @Bean
+        public InMemoryUserDetailsManager userDetailsService() {
+                UserDetails admin = User.builder()
+                                .username("admin")
+                                .password("$2a$05$cRtC6BGeZG/yS42B2J8yye4K.zfozPF3M4TfQ50eLtSeq/xWvz/1a")
+                                .roles("ADMIN")
+                                .build();
+                return new InMemoryUserDetailsManager(admin);
+        }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
 }

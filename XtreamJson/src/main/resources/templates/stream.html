@@ -8,28 +8,9 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="/css/player.css" />
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@1.9.10"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7/dist/hls.min.js"></script>
-    <style>
-      body {
-        background: #181818;
-        color: #fff;
-      }
-      .stream-container {
-        max-width: 900px;
-        margin: 40px auto;
-        background: #222;
-        border-radius: 10px;
-        box-shadow: 0 2px 16px #0006;
-        padding: 2rem;
-      }
-      video {
-        width: 100%;
-        height: auto;
-        border-radius: 8px;
-        background: #000;
-      }
-    </style>
   </head>
   <body>
     <div th:replace="~{fragments/navbar :: navbar}"></div>
@@ -38,6 +19,56 @@
       <h3 id="movieTitleDisplay" class="text-white mb-2"></h3>
       <div id="streamUrlDisplay" class="mb-2 text-info small d-none"></div>
       <video id="player" controls autoplay muted preload="auto"></video>
+
+      <!-- Custom Video Controls -->
+      <div id="customControls" class="custom-controls mt-3">
+        <div class="controls-row">
+          <button
+            id="rewind30"
+            class="btn btn-outline-light btn-sm"
+            title="Rewind 30 seconds"
+          >
+            <span>⏪ 30s</span>
+          </button>
+          <button
+            id="rewind10"
+            class="btn btn-outline-light btn-sm"
+            title="Rewind 10 seconds"
+          >
+            <span>⏪ 10s</span>
+          </button>
+          <button
+            id="playPause"
+            class="btn btn-outline-light btn-sm"
+            title="Play/Pause (K)"
+          >
+            <span id="playPauseIcon">⏸</span>
+          </button>
+          <button
+            id="forward10"
+            class="btn btn-outline-light btn-sm"
+            title="Forward 10 seconds"
+          >
+            <span>10s ⏩</span>
+          </button>
+          <button
+            id="forward30"
+            class="btn btn-outline-light btn-sm"
+            title="Forward 30 seconds"
+          >
+            <span>30s ⏩</span>
+          </button>
+          <div id="timeDisplay" class="time-display ms-3">
+            <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
+          </div>
+        </div>
+        <div class="keyboard-hints mt-2">
+          <small class="text-muted">
+            Keyboard: ← / J (back 10s) | → / L (forward 10s) | K (play/pause)
+          </small>
+        </div>
+      </div>
+
       <div id="videoError" class="alert alert-danger mt-3 d-none"></div>
       <div id="vlcButtonContainer" class="mt-2"></div>
       <div id="vlcHelpText" class="text-secondary small mt-1"></div>
@@ -46,131 +77,13 @@
       </div>
     </div>
 
+    <script src="/js/player.js"></script>
     <script>
-      // Attempt server-injected URL (templating)
       let injectedUrl = "[[${url}]]";
-      if (!injectedUrl || injectedUrl.includes("${url}")) {
-        injectedUrl = null;
-      }
-
       let injectedTitle = "[[${title}]]";
-      if (!injectedTitle || injectedTitle.includes("${title}")) {
-        injectedTitle = null;
-      }
 
-      // Fallback to query param
-      function getQueryParam(name) {
-        return new URLSearchParams(window.location.search).get(name);
-      }
-      let streamUrl = injectedUrl || getQueryParam("url");
-      let streamTitle = injectedTitle || getQueryParam("title");
-
-      // Helper to safely extract extension ignoring query params
-      function getExtension(url) {
-          try {
-              const u = new URL(url);
-              return u.pathname.split('.').pop().toLowerCase();
-          } catch (e) {
-              return url.split('?')[0].split('.').pop().toLowerCase();
-          }
-      }
-
-      const ext = streamUrl ? getExtension(streamUrl) : "";
-      let finalUrl = streamUrl;
-
-      // Logic Flow:
-      // 1. If TS -> Transcode (Server handles fetching, so mixed content is fine).
-      // 2. If Other -> Check Mixed Content -> Proxy if needed.
-      
-      if (ext === "ts") {
-          console.log("TS file detected. Using transcoder.");
-          const transcodeUrl = "/transcode?url=" + encodeURIComponent(streamUrl);
-          player.setAttribute("type", "video/mp4");
-          player.src = transcodeUrl;
-          
-          player.onerror = () => showUnsupported("TS stream could not be played/transcoded. The server might be unable to reach the stream or ffmpeg failed.");
-
-      } else {
-          // Mixed Content Check
-          if (streamUrl && window.location.protocol === "https:" && streamUrl.startsWith("http://")) {
-            console.log("Mixed content detected. Proxying stream via backend.");
-            finalUrl = "/proxy?url=" + encodeURIComponent(streamUrl);
-          }
-          
-          if (["mkv", "hevc"].includes(ext)) {
-               showUnsupported("MKV/HEVC/4K files are not supported in browsers. Use MP4 (H.264/AAC) or HLS (.m3u8).");
-          } else if (ext === "m3u8") {
-              if (Hls.isSupported()) {
-                if (window.hls) window.hls.destroy();
-                window.hls = new Hls();
-                window.hls.loadSource(finalUrl);
-                window.hls.attachMedia(player);
-                window.hls.on(Hls.Events.ERROR, (event, data) => {
-                    if (data.fatal) {
-                        showUnsupported("HLS playback failed. Please check the stream.");
-                    }
-                });
-              } else if (player.canPlayType("application/vnd.apple.mpegurl")) {
-                player.src = finalUrl;
-              } else {
-                showUnsupported("Browser does not support HLS. Use VLC instead.");
-              }
-          } else {
-              // Default (MP4, WebM, etc.)
-              let mime = ext === "webm" ? "video/webm" : "video/mp4";
-              if (player.canPlayType(mime)) {
-                player.setAttribute("type", mime);
-                player.src = finalUrl;
-              } else {
-                showUnsupported("Browser cannot play this file type. Try VLC.");
-              }
-          }
-      }
-
-      // Centralized error handling
-      function showUnsupported(msg) {
-        errorDiv.textContent = msg;
-        errorDiv.classList.remove("d-none");
-        player.style.display = "none";
-        showVlcButton(streamUrl);
-      }
-
-      // VLC helper
-      function showVlcButton(url) {
-        const vlcContainer = document.getElementById("vlcButtonContainer");
-        vlcContainer.innerHTML = "";
-
-        // Copy URL button
-        const copyBtn = document.createElement("button");
-        copyBtn.className = "btn btn-success me-2";
-        copyBtn.textContent = "Copy URL for VLC";
-        copyBtn.onclick = () => {
-          navigator.clipboard.writeText(url).then(() => {
-            copyBtn.textContent =
-              "Copied! Paste in VLC → Media → Open Network Stream";
-            setTimeout(() => {
-              copyBtn.textContent = "Copy URL for VLC";
-            }, 3000);
-          });
-        };
-        vlcContainer.appendChild(copyBtn);
-
-        // .m3u download link
-        const m3uContent = `#EXTM3U\n${url}\n`;
-        const m3uBlob = new Blob([m3uContent], { type: "audio/x-mpegurl" });
-        const m3uUrl = URL.createObjectURL(m3uBlob);
-        const m3uLink = document.createElement("a");
-        m3uLink.href = m3uUrl;
-        m3uLink.download = "stream.m3u";
-        m3uLink.className = "btn btn-primary";
-        m3uLink.textContent = "Download .m3u for VLC";
-        vlcContainer.appendChild(m3uLink);
-
-        // Help text
-        document.getElementById("vlcHelpText").innerHTML =
-          "If the video does not play in your browser, copy the URL and paste it in VLC: <b>Media → Open Network Stream</b>." +
-          "<br>Or download the .m3u file and open it with VLC.";
-      }
+      // Initialize player with server-side values
+      initPlayer(injectedUrl, injectedTitle);
     </script>
     <script src="/js/navbar.js"></script>
   </body>

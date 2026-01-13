@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.hawkins.xtreamjson.util.ProxyUrlValidator;
+import com.hawkins.xtreamjson.util.ProxyValidationException;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +24,12 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @Slf4j
 public class ProxyController {
+
+    private final ProxyUrlValidator proxyUrlValidator;
+
+    public ProxyController(ProxyUrlValidator proxyUrlValidator) {
+        this.proxyUrlValidator = proxyUrlValidator;
+    }
 
     @GetMapping("/proxy")
     public void proxyStream(@RequestParam("url") String streamUrl, HttpServletRequest request,
@@ -30,8 +39,9 @@ public class ProxyController {
         OutputStream outputStream = null;
 
         try {
-            log.info("Proxying stream: {}", streamUrl);
-            URL url = new URI(streamUrl).toURL();
+            log.debug("Proxying stream: {}", streamUrl);
+            URI initialUri = proxyUrlValidator.validate(streamUrl);
+            URL url = initialUri.toURL();
             connection = (HttpURLConnection) url.openConnection();
             connection.setConnectTimeout(15000);
             connection.setReadTimeout(30000);
@@ -64,12 +74,14 @@ public class ProxyController {
                     responseCode == 308) && redirectCount < 5) {
 
                 String newUrl = connection.getHeaderField("Location");
-                log.info("Redirecting proxy from {} to {}", url, newUrl);
+                log.debug("Redirecting proxy from {} to {}", url, newUrl);
 
                 // Close previous connection
                 connection.disconnect();
 
-                url = new URI(newUrl).toURL();
+                URI redirectUri = new URI(url.toString()).resolve(newUrl);
+                redirectUri = proxyUrlValidator.validate(redirectUri);
+                url = redirectUri.toURL();
                 connection = (HttpURLConnection) url.openConnection();
                 connection.setConnectTimeout(15000);
                 connection.setReadTimeout(30000);
@@ -87,17 +99,27 @@ public class ProxyController {
 
             response.setStatus(responseCode);
 
-            // Forward response headers
+            // Forward response headers (excluding Accept-Ranges which we'll set ourselves)
             for (Map.Entry<String, List<String>> entry : connection.getHeaderFields().entrySet()) {
                 String key = entry.getKey();
                 if (key != null && !key.equalsIgnoreCase("Transfer-Encoding")
-                        && !key.equalsIgnoreCase("Content-Encoding")) {
-                    // Exclude Content-Encoding to avoid double compression issues if we read raw
-                    // stream
+                        && !key.equalsIgnoreCase("Content-Encoding")
+                        && !key.equalsIgnoreCase("Accept-Ranges")) {
+                    // Exclude Accept-Ranges to avoid upstream's potentially malformed value
                     for (String value : entry.getValue()) {
                         response.addHeader(key, value);
                     }
                 }
+            }
+
+            // Explicitly set Accept-Ranges header for video seeking
+            // This MUST be set to "bytes" (not a range like "0-12345")
+            response.setHeader("Accept-Ranges", "bytes");
+
+            // Log Range request handling for debugging
+            String rangeHeader = request.getHeader("Range");
+            if (rangeHeader != null) {
+                log.debug("Handling Range request: {} - Response code: {}", rangeHeader, responseCode);
             }
 
             if (responseCode >= 400) {
@@ -122,6 +144,14 @@ public class ProxyController {
                 outputStream.flush();
             }
 
+        } catch (ProxyValidationException e) {
+            log.warn("Blocked proxy request: {}", e.getMessage());
+            response.setStatus(e.getStatusCode());
+        } catch (org.springframework.web.context.request.async.AsyncRequestNotUsableException e) {
+            // This is expected when client disconnects during streaming (e.g., seeking,
+            // pausing)
+            // The browser cancels the current request and starts a new Range request
+            log.debug("Client disconnected during stream (likely due to seeking): {}", streamUrl);
         } catch (Exception e) {
             log.error("Error proxying stream: {}", streamUrl, e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -146,7 +176,8 @@ public class ProxyController {
         OutputStream outputStream = null;
 
         try {
-            URL url = new URI(imageUrl).toURL();
+            URI initialUri = proxyUrlValidator.validate(imageUrl);
+            URL url = initialUri.toURL();
             connection = (HttpURLConnection) url.openConnection();
             connection.setConnectTimeout(10000);
             connection.setReadTimeout(15000);
@@ -159,7 +190,9 @@ public class ProxyController {
             if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP
                     || responseCode == HttpURLConnection.HTTP_MOVED_PERM) {
                 String newUrl = connection.getHeaderField("Location");
-                connection = (HttpURLConnection) new URI(newUrl).toURL().openConnection();
+                URI redirectUri = new URI(url.toString()).resolve(newUrl);
+                redirectUri = proxyUrlValidator.validate(redirectUri);
+                connection = (HttpURLConnection) redirectUri.toURL().openConnection();
                 responseCode = connection.getResponseCode();
             }
 
@@ -180,6 +213,9 @@ public class ProxyController {
             }
             outputStream.flush();
 
+        } catch (ProxyValidationException e) {
+            log.warn("Blocked proxy image request: {}", e.getMessage());
+            response.setStatus(e.getStatusCode());
         } catch (Exception e) {
             log.error("Error proxying image: {}", imageUrl, e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

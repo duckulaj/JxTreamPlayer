@@ -3,11 +3,11 @@ package com.hawkins.xtreamjson.service;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 
 import org.springframework.stereotype.Service;
 
@@ -25,55 +25,47 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EpgService {
     private final IptvProviderService iptvProviderService;
+    private final HttpClient httpClient;
+    private final XmlMapper xmlMapper;
 
     public EpgService(IptvProviderService iptvProviderService) {
         this.iptvProviderService = iptvProviderService;
+        this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .connectTimeout(Duration.ofSeconds(15))
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .build();
+        this.xmlMapper = new XmlMapper();
     }
 
     /*
      * WARNING - Removed try catching itself - possible behaviour change.
      */
-    public void downloadEpgXml() throws IOException {
+    public void downloadEpgXml() throws IOException, InterruptedException {
         String baseUrl = ((IptvProvider) this.iptvProviderService.getSelectedProvider().get()).getApiUrl();
         String username = ((IptvProvider) this.iptvProviderService.getSelectedProvider().get()).getUsername();
         String password = ((IptvProvider) this.iptvProviderService.getSelectedProvider().get()).getPassword();
         String epgUrl = String.format("%s/xmltv.php?username=%s&password=%s", baseUrl, username, password);
-        HttpURLConnection connection = null;
-        InputStream inputStream = null;
-        FileOutputStream outputStream = null;
         File tempFile = new File("epg.xml.tmp");
 
-        try {
-            int bytesRead;
-            URL url;
-            try {
-                url = new URI(epgUrl).toURL();
-            } catch (URISyntaxException | MalformedURLException e) {
-                throw new IOException("Invalid EPG URL: " + epgUrl, e);
-            }
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            connection.setConnectTimeout(15000);
-            connection.setReadTimeout(90000);
-            int responseCode = connection.getResponseCode();
-            if (responseCode != 200) {
-                throw new IOException("Failed to download EPG XML: HTTP " + responseCode);
-            }
-            inputStream = connection.getInputStream();
-            outputStream = new FileOutputStream(tempFile);
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(epgUrl))
+                .timeout(Duration.ofSeconds(90))
+                .GET()
+                .build();
+
+        HttpResponse<InputStream> response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
+
+        if (response.statusCode() != 200) {
+            throw new IOException("Failed to download EPG XML: HTTP " + response.statusCode());
+        }
+
+        try (InputStream inputStream = response.body();
+                FileOutputStream outputStream = new FileOutputStream(tempFile)) {
             byte[] buffer = new byte[8192];
+            int bytesRead;
             while ((bytesRead = inputStream.read(buffer)) != -1) {
                 outputStream.write(buffer, 0, bytesRead);
-            }
-        } finally {
-            if (inputStream != null) {
-                inputStream.close();
-            }
-            if (outputStream != null) {
-                outputStream.close();
-            }
-            if (connection != null) {
-                connection.disconnect();
             }
         }
 
@@ -99,7 +91,10 @@ public class EpgService {
             return null;
         }
 
-        XmlMapper xmlMapper = new XmlMapper();
+        if (!file.exists()) {
+            log.error("EPG file not found at {}", EPG_FILE_PATH);
+            return null;
+        }
         try {
             return xmlMapper.readValue(file, EpgContainer.class);
         } catch (IOException e) {

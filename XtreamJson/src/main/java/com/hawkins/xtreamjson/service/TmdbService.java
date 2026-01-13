@@ -25,8 +25,8 @@ public class TmdbService {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
-    public TmdbService() {
-        this.objectMapper = new ObjectMapper();
+    public TmdbService(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
         this.httpClient = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_2)
                 .connectTimeout(java.time.Duration.ofSeconds(10))
