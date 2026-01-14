@@ -214,13 +214,16 @@ public class JsonService {
 					HttpResult streams = getWithRetry(liveStreamsUrl, creds, maxRetries);
 					if (cats.is2xx() && cats.body != null) {
 						List<LiveCategory> list = liveCategoryReader.readValue(cats.body);
+						log.info("Discovered {} Live Categories. Sample: {}", list.size(),
+								list.stream().limit(10).map(LiveCategory::getCategoryName).toList());
 						for (LiveCategory cat : list) {
 							String pfx = XtreamCodesUtils.extractPreface(cat.getCategoryName());
 							if (pfx != null && !discoveredPrefixes.contains(pfx))
 								discoveredPrefixes.add(pfx);
 						}
 						liveCategoryRepository.saveAll(list);
-						log.info("Live Categories: {}", list.size());
+						log.info("Live Categories: {} | Discovered prefixes so far: {}", list.size(),
+								discoveredPrefixes);
 					}
 					if (streams.is2xx() && streams.body != null) {
 						List<LiveStream> list = liveStreamReader.readValue(streams.body);
@@ -244,13 +247,15 @@ public class JsonService {
 					HttpResult streams = getWithRetry(movieStreamsUrl, creds, maxRetries);
 					if (cats.is2xx() && cats.body != null) {
 						List<MovieCategory> list = movieCategoryReader.readValue(cats.body);
+						log.info("Discovered {} Movie Categories", list.size());
 						for (MovieCategory cat : list) {
 							String pfx = XtreamCodesUtils.extractPreface(cat.getCategoryName());
 							if (pfx != null && !discoveredPrefixes.contains(pfx))
 								discoveredPrefixes.add(pfx);
 						}
 						movieCategoryRepository.saveAll(list);
-						log.info("Movie Categories: {}", list.size());
+						log.info("Movie Categories: {} | Discovered prefixes so far: {}", list.size(),
+								discoveredPrefixes);
 					}
 					if (streams.is2xx() && streams.body != null) {
 						List<MovieStream> list = movieStreamReader.readValue(streams.body);
@@ -611,9 +616,13 @@ public class JsonService {
 
 	public List<LiveCategory> getAllLiveCategories() {
 		java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet(applicationPropertiesService);
-		return liveCategoryRepository.findAll().stream()
+		List<LiveCategory> all = liveCategoryRepository.findAll();
+		List<LiveCategory> filtered = all.stream()
 				.filter(cat -> XtreamCodesUtils.isIncluded(cat.getCategoryName(), includedSet))
 				.toList();
+		log.info("getAllLiveCategories: found {}, filtered to {} (includedSet: {})", all.size(), filtered.size(),
+				includedSet);
+		return filtered;
 	}
 
 	public List<LiveStream> getLiveStreamsByCategory(String categoryId) {
@@ -625,9 +634,13 @@ public class JsonService {
 
 	public List<MovieCategory> getAllMovieCategories() {
 		java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet(applicationPropertiesService);
-		return movieCategoryRepository.findAll().stream()
+		List<MovieCategory> all = movieCategoryRepository.findAll();
+		List<MovieCategory> filtered = all.stream()
 				.filter(cat -> XtreamCodesUtils.isIncluded(cat.getCategoryName(), includedSet))
 				.toList();
+		log.info("getAllMovieCategories: found {}, filtered to {} (includedSet: {})", all.size(), filtered.size(),
+				includedSet);
+		return filtered;
 	}
 
 	public List<MovieStream> getMoviesByCategory(String categoryId) {
@@ -640,9 +653,13 @@ public class JsonService {
 
 	public List<SeriesCategory> getAllSeriesCategories() {
 		java.util.Set<String> includedSet = XtreamCodesUtils.getIncludedCountriesSet(applicationPropertiesService);
-		return seriesCategoryRepository.findAll().stream()
+		List<SeriesCategory> all = seriesCategoryRepository.findAll();
+		List<SeriesCategory> filtered = all.stream()
 				.filter(cat -> XtreamCodesUtils.isIncluded(cat.getCategoryName(), includedSet))
 				.toList();
+		log.info("getAllSeriesCategories: found {}, filtered to {} (includedSet: {})", all.size(), filtered.size(),
+				includedSet);
+		return filtered;
 	}
 
 	public List<Series> getSeriesByCategory(String categoryId) {

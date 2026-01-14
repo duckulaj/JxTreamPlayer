@@ -179,20 +179,21 @@ public class XtreamCodesUtils {
 
     // Helper to check if a name matches includedCountries
     public static boolean isIncluded(String name, java.util.Set<String> includedSet) {
-        if (name == null || name.isEmpty() || includedSet.isEmpty())
+        if (name == null || name.isEmpty())
             return false;
+
+        if (includedSet == null || includedSet.isEmpty())
+            return true;
 
         String preface = extractPreface(name);
         if (preface != null) {
             return includedSet.contains(preface.toUpperCase());
         }
 
-        // Fallback: If no recognized preface structure, maybe it's the whole name?
-        // Or should we stay strict?
-        // Given the user's intent to select prefixes, strict matching seems better.
-        // But for safety, let's also check if the whole name is in the set
-        // (for cases where the user manually added a country name)
-        return includedSet.contains(name.toUpperCase());
+        // If no recognized preface structure is found, we assume it's a global/generic
+        // category
+        // and include it by default.
+        return true;
     }
 
     public static String printNow() {
