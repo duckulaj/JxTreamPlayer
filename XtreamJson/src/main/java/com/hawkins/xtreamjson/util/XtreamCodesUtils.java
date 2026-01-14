@@ -39,39 +39,6 @@ public class XtreamCodesUtils {
     }
 
     /**
-     * Builds a VOD/movie stream URL from credentials and MovieStream.
-     */
-    public static String buildVodUrl(XstreamCredentials credentials, com.hawkins.xtreamjson.data.MovieStream stream) {
-        if (credentials == null || stream == null
-                || isNullOrEmpty(credentials.getApiUrl(), credentials.getUsername(), credentials.getPassword()) ||
-                isNullOrEmpty(stream.getContainerExtension()) || stream.getStreamId() <= 0) {
-            return null;
-        }
-        return String.format("%s/movie/%s/%s/%d.%s",
-                credentials.getApiUrl(),
-                credentials.getUsername(),
-                credentials.getPassword(),
-                stream.getStreamId(),
-                stream.getContainerExtension());
-    }
-
-    /**
-     * Builds a live stream URL from credentials and LiveStream.
-     */
-    public static String buildLiveUrl(XstreamCredentials credentials, com.hawkins.xtreamjson.data.LiveStream stream) {
-        if (credentials == null || stream == null
-                || isNullOrEmpty(credentials.getApiUrl(), credentials.getUsername(), credentials.getPassword())
-                || stream.getStreamId() <= 0) {
-            return null;
-        }
-        return String.format("%s/live/%s/%s/%d.ts",
-                credentials.getApiUrl(),
-                credentials.getUsername(),
-                credentials.getPassword(),
-                stream.getStreamId());
-    }
-
-    /**
      * Builds an endpoint URL using a template from Constants and
      * XstreamCredentials.
      * 
@@ -137,7 +104,6 @@ public class XtreamCodesUtils {
      * Extracts preface identified by separators.
      * E.g. "EN - Sports" -> "EN", "* - UK" -> "UK"
      */
-    @SuppressWarnings("unused") // Used in JsonService and internal logic
     public static String extractPreface(String name) {
         if (name == null)
             return null;
