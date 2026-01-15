@@ -296,7 +296,6 @@ public class JsonService {
 		final var otherErrorCount = new AtomicInteger();
 
 		// Lock-free aggregators; one saver drains them in chunks
-		final var categoriesQ = new ConcurrentLinkedQueue<SeriesCategory>();
 		final var seriesQ = new ConcurrentLinkedQueue<Series>();
 		final var seasonsQ = new ConcurrentLinkedQueue<Season>();
 		final var episodesQ = new ConcurrentLinkedQueue<Episode>();
@@ -309,9 +308,8 @@ public class JsonService {
 			List<Season> seBuf = new ArrayList<>(BATCH_SIZE);
 			List<Episode> eBuf = new ArrayList<>(BATCH_SIZE);
 
-			while (!stopSaver.get() || !categoriesQ.isEmpty() || !seriesQ.isEmpty() || !seasonsQ.isEmpty()
+			while (!stopSaver.get() || !seriesQ.isEmpty() || !seasonsQ.isEmpty()
 					|| !episodesQ.isEmpty()) {
-				drain(categoriesQ, cBuf, BATCH_SIZE, list -> seriesCategoryRepository.saveAll(list));
 				drain(seriesQ, sBuf, BATCH_SIZE, list -> seriesRepository.saveAll(list));
 				drain(seasonsQ, seBuf, BATCH_SIZE, list -> seasonRepository.saveAll(list));
 				drain(episodesQ, eBuf, BATCH_SIZE, list -> episodeRepository.saveAll(list));
@@ -322,7 +320,6 @@ public class JsonService {
 				}
 			}
 			// final flush
-			drain(categoriesQ, cBuf, 0, list -> seriesCategoryRepository.saveAll(list));
 			drain(seriesQ, sBuf, 0, list -> seriesRepository.saveAll(list));
 			drain(seasonsQ, seBuf, 0, list -> seasonRepository.saveAll(list));
 			drain(episodesQ, eBuf, 0, list -> episodeRepository.saveAll(list));
@@ -343,7 +340,8 @@ public class JsonService {
 				if (pfx != null && !discoveredPrefixes.contains(pfx))
 					discoveredPrefixes.add(pfx);
 			}
-			categoriesQ.addAll(categories);
+			seriesCategoryRepository.saveAll(categories);
+			log.info("Saved {} Series Categories immediately", categories.size());
 
 			// Gather unique series IDs across all categories
 			final java.util.Set<String> uniqueSeriesIds = new java.util.HashSet<>(8192);
