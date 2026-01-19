@@ -24,4 +24,5 @@ public class EpgChannel {
     }
 
     private String streamUrl;
+    private String categoryId;
 }

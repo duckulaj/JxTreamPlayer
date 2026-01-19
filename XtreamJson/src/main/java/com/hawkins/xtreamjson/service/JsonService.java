@@ -617,6 +617,7 @@ public class JsonService {
 		List<LiveCategory> all = liveCategoryRepository.findAll();
 		List<LiveCategory> filtered = all.stream()
 				.filter(cat -> XtreamCodesUtils.isIncluded(cat.getCategoryName(), includedSet))
+				.sorted(java.util.Comparator.comparing(LiveCategory::getCategoryName, String.CASE_INSENSITIVE_ORDER))
 				.toList();
 		log.info("getAllLiveCategories: found {}, filtered to {} (includedSet: {})", all.size(), filtered.size(),
 				includedSet);
@@ -635,6 +636,7 @@ public class JsonService {
 		List<MovieCategory> all = movieCategoryRepository.findAll();
 		List<MovieCategory> filtered = all.stream()
 				.filter(cat -> XtreamCodesUtils.isIncluded(cat.getCategoryName(), includedSet))
+				.sorted(java.util.Comparator.comparing(MovieCategory::getCategoryName, String.CASE_INSENSITIVE_ORDER))
 				.toList();
 		log.info("getAllMovieCategories: found {}, filtered to {} (includedSet: {})", all.size(), filtered.size(),
 				includedSet);
@@ -654,6 +656,7 @@ public class JsonService {
 		List<SeriesCategory> all = seriesCategoryRepository.findAll();
 		List<SeriesCategory> filtered = all.stream()
 				.filter(cat -> XtreamCodesUtils.isIncluded(cat.getCategoryName(), includedSet))
+				.sorted(java.util.Comparator.comparing(SeriesCategory::getCategoryName, String.CASE_INSENSITIVE_ORDER))
 				.toList();
 		log.info("getAllSeriesCategories: found {}, filtered to {} (includedSet: {})", all.size(), filtered.size(),
 				includedSet);

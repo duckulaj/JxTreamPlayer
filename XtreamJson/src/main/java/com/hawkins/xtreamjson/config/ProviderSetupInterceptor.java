@@ -19,7 +19,8 @@ public class ProviderSetupInterceptor implements HandlerInterceptor {
             throws Exception {
         String uri = request.getRequestURI();
         // Allow access to /providers and static resources
-        if (uri.startsWith("/providers") || uri.startsWith("/css") || uri.startsWith("/js") || uri.startsWith("/images")
+        if (uri.startsWith("/providers") || uri.startsWith("/login") || uri.startsWith("/css") || uri.startsWith("/js")
+                || uri.startsWith("/images")
                 || uri.startsWith("/webjars")) {
             return true;
         }

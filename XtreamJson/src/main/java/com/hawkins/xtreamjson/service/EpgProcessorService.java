@@ -18,6 +18,8 @@ import com.hawkins.xtreamjson.data.EpgContainer;
 import com.hawkins.xtreamjson.data.EpgProgramme;
 import com.hawkins.xtreamjson.data.EpgProgrammeViewModel;
 import com.hawkins.xtreamjson.data.LiveStream;
+import com.hawkins.xtreamjson.data.LiveCategory;
+import com.hawkins.xtreamjson.repository.LiveCategoryRepository;
 import com.hawkins.xtreamjson.repository.LiveStreamRepository;
 import com.hawkins.xtreamjson.util.StreamUrlHelper;
 import com.hawkins.xtreamjson.util.XstreamCredentials;
@@ -38,9 +40,12 @@ public class EpgProcessorService {
     private static final DateTimeFormatter XML_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss Z");
 
     private final LiveStreamRepository liveStreamRepository;
+    private final LiveCategoryRepository liveCategoryRepository;
 
-    public EpgProcessorService(LiveStreamRepository liveStreamRepository) {
+    public EpgProcessorService(LiveStreamRepository liveStreamRepository,
+            LiveCategoryRepository liveCategoryRepository) {
         this.liveStreamRepository = liveStreamRepository;
+        this.liveCategoryRepository = liveCategoryRepository;
     }
 
     /**
@@ -61,20 +66,21 @@ public class EpgProcessorService {
         // Generate timeline slots
         List<String> timelineSlots = generateTimelineSlots(timelineStart);
 
-        // Prepare stream URL map
-        Map<String, String> channelStreamUrlMap = buildChannelStreamUrlMap(credentials);
+        // Prepare info map
+        Map<String, ChannelInfo> channelInfoMap = buildChannelStreamUrlMap(credentials);
 
-        // Enrich channels with stream URLs
+        // Enrich channels with stream URLs and Category IDs
         for (EpgChannel channel : filteredChannels) {
-            String url = channelStreamUrlMap.get(channel.getId());
-            if (url != null) {
-                channel.setStreamUrl(url);
+            var info = channelInfoMap.get(channel.getId());
+            if (info != null) {
+                channel.setStreamUrl(info.url);
+                channel.setCategoryId(info.categoryId);
             }
         }
 
         // Process programmes into view models
         Map<String, List<EpgProgrammeViewModel>> programmesByChannel = processProgrammes(
-                epgData.getProgrammes(), filteredChannels, timelineStart, channelStreamUrlMap);
+                epgData.getProgrammes(), filteredChannels, timelineStart, channelInfoMap);
 
         // Calculate current time offset
         long nowOffset = ChronoUnit.MINUTES.between(timelineStart, now) * PIXELS_PER_MINUTE;
@@ -82,7 +88,19 @@ public class EpgProcessorService {
             nowOffset = 0;
         }
 
-        return new EpgViewModel(filteredChannels, programmesByChannel, timelineSlots, nowOffset);
+        // Calculate active categories
+        List<String> activeCategoryIds = filteredChannels.stream()
+                .map(EpgChannel::getCategoryId)
+                .filter(id -> id != null && !id.isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
+
+        List<LiveCategory> activeCategories = liveCategoryRepository.findAllById(activeCategoryIds);
+        // Sort alphabetically to match previous behavior
+        activeCategories
+                .sort(java.util.Comparator.comparing(LiveCategory::getCategoryName, String.CASE_INSENSITIVE_ORDER));
+
+        return new EpgViewModel(filteredChannels, programmesByChannel, timelineSlots, nowOffset, activeCategories);
     }
 
     /**
@@ -137,21 +155,31 @@ public class EpgProcessorService {
     }
 
     /**
-     * Builds a map of EPG channel IDs to stream URLs.
+     * Builds a map of EPG channel IDs to stream info (URL and categoryId).
      */
-    private Map<String, String> buildChannelStreamUrlMap(XstreamCredentials credentials) {
-        Map<String, String> channelStreamUrlMap = new HashMap<>();
+    private Map<String, ChannelInfo> buildChannelStreamUrlMap(XstreamCredentials credentials) {
+        Map<String, ChannelInfo> channelInfoMap = new HashMap<>();
         if (credentials != null) {
             List<LiveStream> allStreams = liveStreamRepository.findAll();
             for (LiveStream stream : allStreams) {
                 if (stream.getEpgChannelId() != null && !stream.getEpgChannelId().isEmpty()) {
                     String url = StreamUrlHelper.buildLiveUrl(
                             credentials.getApiUrl(), credentials.getUsername(), credentials.getPassword(), stream);
-                    channelStreamUrlMap.put(stream.getEpgChannelId(), url);
+                    channelInfoMap.put(stream.getEpgChannelId(), new ChannelInfo(url, stream.getCategoryId()));
                 }
             }
         }
-        return channelStreamUrlMap;
+        return channelInfoMap;
+    }
+
+    private static class ChannelInfo {
+        final String url;
+        final String categoryId;
+
+        ChannelInfo(String url, String categoryId) {
+            this.url = url;
+            this.categoryId = categoryId;
+        }
     }
 
     /**
@@ -161,7 +189,7 @@ public class EpgProcessorService {
             List<EpgProgramme> programmes,
             List<EpgChannel> filteredChannels,
             LocalDateTime timelineStart,
-            Map<String, String> channelStreamUrlMap) {
+            Map<String, ChannelInfo> channelInfoMap) {
 
         Map<String, List<EpgProgrammeViewModel>> programmesByChannel = new HashMap<>();
 
@@ -181,7 +209,7 @@ public class EpgProcessorService {
             for (var prog : rawProgs) {
                 try {
                     EpgProgrammeViewModel vm = createProgrammeViewModel(
-                            prog, timelineStart, channelId, channelStreamUrlMap);
+                            prog, timelineStart, channelId, channelInfoMap);
                     if (vm != null) {
                         viewModels.add(vm);
                     }
@@ -202,7 +230,7 @@ public class EpgProcessorService {
             EpgProgramme prog,
             LocalDateTime timelineStart,
             String channelId,
-            Map<String, String> channelStreamUrlMap) {
+            Map<String, ChannelInfo> channelInfoMap) {
 
         // Parse with zone offset and convert to UTC
         ZonedDateTime startZoned = ZonedDateTime.parse(prog.getStart(), XML_FORMATTER);
@@ -246,8 +274,8 @@ public class EpgProcessorService {
         vm.setStyle("left: " + displayLeft + "px; width: " + displayWidth + "px; position: absolute;");
 
         // Set stream URL if available for this channel
-        if (channelStreamUrlMap.containsKey(channelId)) {
-            vm.setStreamUrl(channelStreamUrlMap.get(channelId));
+        if (channelInfoMap.containsKey(channelId)) {
+            vm.setStreamUrl(channelInfoMap.get(channelId).url);
         }
 
         return vm;
@@ -261,15 +289,18 @@ public class EpgProcessorService {
         private final Map<String, List<EpgProgrammeViewModel>> programmesByChannel;
         private final List<String> timelineSlots;
         private final long nowOffset;
+        private final List<LiveCategory> categories;
 
         public EpgViewModel(List<EpgChannel> channels,
                 Map<String, List<EpgProgrammeViewModel>> programmesByChannel,
                 List<String> timelineSlots,
-                long nowOffset) {
+                long nowOffset,
+                List<LiveCategory> categories) {
             this.channels = channels;
             this.programmesByChannel = programmesByChannel;
             this.timelineSlots = timelineSlots;
             this.nowOffset = nowOffset;
+            this.categories = categories;
         }
 
         public List<EpgChannel> getChannels() {
@@ -286,6 +317,10 @@ public class EpgProcessorService {
 
         public long getNowOffset() {
             return nowOffset;
+        }
+
+        public List<LiveCategory> getCategories() {
+            return categories;
         }
     }
 }

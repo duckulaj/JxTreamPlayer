@@ -106,6 +106,10 @@ function initPlayer(injectedUrl, injectedTitle) {
       errorDiv.classList.remove("d-none");
     }
     if (player) player.style.display = "none";
+
+    const customControls = document.getElementById("customControls");
+    if (customControls) customControls.style.display = "none";
+
     showVlcButton(streamUrl);
   }
 

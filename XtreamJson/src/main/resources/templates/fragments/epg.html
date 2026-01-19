@@ -1,11 +1,42 @@
 <div th:fragment="epg-fragment">
+  <div class="epg-header mb-3">
+    <ul class="nav nav-tabs" id="epgCategoryTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link active"
+          id="all-tab"
+          data-bs-toggle="tab"
+          type="button"
+          onclick="filterCategory('all')"
+        >
+          All
+        </button>
+      </li>
+      <th:block th:each="cat : ${categories}">
+        <li class="nav-item" role="presentation">
+          <button
+            class="nav-link"
+            th:id="'cat-' + ${cat.categoryId}"
+            data-bs-toggle="tab"
+            type="button"
+            th:text="${cat.categoryName}"
+            th:attr="onclick='filterCategory(\'' + ${cat.categoryId} + '\')'"
+          ></button>
+        </li>
+      </th:block>
+    </ul>
+  </div>
   <div class="epg-container">
     <!-- Left Column: Channels -->
     <div class="channel-column">
       <div class="channel-row" style="height: 40px; background-color: #333">
         <!-- Empty corner -->
       </div>
-      <div th:each="channel : ${channels}" class="channel-row">
+      <div
+        th:each="channel : ${channels}"
+        class="channel-row"
+        th:data-category-id="${channel.categoryId}"
+      >
         <img
           th:if="${channel.icon != null}"
           th:src="${channel.icon.src}"
@@ -38,7 +69,11 @@
       </div>
 
       <!-- Program Rows -->
-      <div th:each="channel : ${channels}" class="program-row">
+      <div
+        th:each="channel : ${channels}"
+        class="program-row"
+        th:data-category-id="${channel.categoryId}"
+      >
         <th:block th:if="${programmesByChannel.containsKey(channel.id)}">
           <a
             th:each="prog : ${programmesByChannel.get(channel.id)}"
@@ -67,4 +102,104 @@
       </div>
     </div>
   </div>
+
+  <style>
+    #epgCategoryTabs {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      border-bottom: 1px solid #444;
+      scrollbar-width: none; /* Firefox */
+    }
+    #epgCategoryTabs::-webkit-scrollbar {
+      display: none; /* Chrome/Safari */
+    }
+    #epgCategoryTabs .nav-item {
+      flex: 0 0 auto;
+    }
+    #epgCategoryTabs .nav-link {
+      color: #ccc;
+      background: transparent;
+      border: 1px solid transparent;
+      margin-bottom: -1px;
+      white-space: nowrap;
+    }
+    #epgCategoryTabs .nav-link.active {
+      color: #fff;
+      background-color: #333;
+      border-color: #444 #444 #333;
+    }
+    #epgCategoryTabs .nav-link:hover {
+      border-color: #444;
+    }
+  </style>
+
+  <script th:inline="javascript">
+    /*<![CDATA[*/
+    function filterCategory(catId) {
+      const channelRows = document.querySelectorAll(
+        ".channel-row[data-category-id]"
+      );
+      const programRows = document.querySelectorAll(
+        ".program-row[data-category-id]"
+      );
+
+      channelRows.forEach((row) => {
+        if (catId === "all" || row.getAttribute("data-category-id") === catId) {
+          row.style.display = "flex";
+        } else {
+          row.style.display = "none";
+        }
+      });
+
+      programRows.forEach((row) => {
+        if (catId === "all" || row.getAttribute("data-category-id") === catId) {
+          row.style.display = "flex";
+        } else {
+          row.style.display = "none";
+        }
+      });
+
+      // Scroll the selected tab button into view
+      const selectedTab =
+        catId === "all"
+          ? document.getElementById("all-tab")
+          : document.getElementById("cat-" + catId);
+      if (selectedTab) {
+        selectedTab.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "center",
+        });
+      }
+    }
+
+    // Ensure keyboard navigation (focus) also scrolls tabs into view
+    document.addEventListener("DOMContentLoaded", () => {
+      const tabs = document.querySelectorAll(
+        '#epgCategoryTabs button[data-bs-toggle="tab"]'
+      );
+      tabs.forEach((tab) => {
+        // When tab is selected (click or keyboard selection)
+        tab.addEventListener("shown.bs.tab", (event) => {
+          event.target.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+            inline: "center",
+          });
+        });
+
+        // When focus moves (arrow keys)
+        tab.addEventListener("focusin", (event) => {
+          event.target.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+            inline: "center",
+          });
+        });
+      });
+    });
+    /*]]>*/
+  </script>
 </div>

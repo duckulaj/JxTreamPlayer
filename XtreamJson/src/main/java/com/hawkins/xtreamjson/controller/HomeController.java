@@ -324,6 +324,7 @@ public class HomeController {
             model.addAttribute("programmesByChannel", viewModel.getProgrammesByChannel());
             model.addAttribute("timelineSlots", viewModel.getTimelineSlots());
             model.addAttribute("nowOffset", viewModel.getNowOffset());
+            model.addAttribute("categories", viewModel.getCategories());
         }
         return "epg";
     }
@@ -343,6 +344,7 @@ public class HomeController {
             model.addAttribute("programmesByChannel", viewModel.getProgrammesByChannel());
             model.addAttribute("timelineSlots", viewModel.getTimelineSlots());
             model.addAttribute("nowOffset", viewModel.getNowOffset());
+            model.addAttribute("categories", viewModel.getCategories());
         }
         return "fragments/epg :: epg-fragment";
     }
