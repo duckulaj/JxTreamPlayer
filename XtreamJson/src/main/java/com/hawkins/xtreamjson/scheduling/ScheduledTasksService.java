@@ -23,7 +23,7 @@ public class ScheduledTasksService {
     }
 
     @Scheduled(cron = "0 0 2 * * *")
-    public void runScheduledTask() {
+    public void runDailyTasks() {
         jsonService.retreiveJsonData();
         log.info("Scheduled Task retreiveJsonData completed at {}", XtreamCodesUtils.printNow());
         try {
@@ -32,6 +32,10 @@ public class ScheduledTasksService {
             e.printStackTrace();
         }
         log.info("Scheduled Task generateAllStrmFiles completed at {}", XtreamCodesUtils.printNow());
+    }
+
+    @Scheduled(cron = "0 0 */6 * * *")
+    public void runPlaylistUpdateTask() {
         playlistService.generateFullLibraryPlaylist();
         log.info("Scheduled Task generateFullLibraryPlaylist completed at {}", XtreamCodesUtils.printNow());
     }
