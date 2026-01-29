@@ -5,9 +5,6 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.List;
-import java.util.Map;
-
 public class RecordSerializationTest {
 
     private final ObjectMapper jsonMapper = new ObjectMapper();

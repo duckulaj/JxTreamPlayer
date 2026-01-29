@@ -303,7 +303,6 @@ public class JsonService {
 		// Single saver flushing queues in chunks
 		final var stopSaver = new AtomicBoolean(false);
 		executor.submit(() -> {
-			List<SeriesCategory> cBuf = new ArrayList<>(BATCH_SIZE);
 			List<Series> sBuf = new ArrayList<>(BATCH_SIZE);
 			List<Season> seBuf = new ArrayList<>(BATCH_SIZE);
 			List<Episode> eBuf = new ArrayList<>(BATCH_SIZE);
