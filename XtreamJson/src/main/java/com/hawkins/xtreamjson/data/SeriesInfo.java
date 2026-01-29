@@ -5,87 +5,45 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import lombok.Data;
-
-@Data
-public class SeriesInfo {
-    @JsonProperty("seasons")
-    private List<Object> seasons;
-    @JsonProperty("info")
-    private Info info;
-    @JsonProperty("episodes")
-    private Map<String, List<Episode>> episodes;
-
-    @Data
-    public static class Info {
-        @JsonProperty("name")
-        private String name;
-        @JsonProperty("cover")
-        private String cover;
-        @JsonProperty("plot")
-        private String plot;
-        @JsonProperty("series_cast")
-        private String seriesCast;
-        @JsonProperty("director")
-        private String director;
-        @JsonProperty("genre")
-        private String genre;
-        @JsonProperty("releaseDate")
-        private String releaseDate;
-        @JsonProperty("release_date")
-        private String release_date;
-        @JsonProperty("last_modified")
-        private String lastModified;
-        @JsonProperty("rating")
-        private String rating;
-        @JsonProperty("rating_5based")
-        private String rating5Based;
-        @JsonProperty("backdrop_path")
-        private List<String> backdropPath;
-        @JsonProperty("tmdb")
-        private String tmdb;
-        @JsonProperty("youtube_trailer")
-        private String youtubeTrailer;
-        @JsonProperty("episode_run_time")
-        private String episodeRunTime;
-        @JsonProperty("category_id")
-        private String categoryId;
-        @JsonProperty("category_ids")
-        private List<Integer> categoryIds;
-        // Getters and setters omitted for brevity
+public record SeriesInfo(
+        @JsonProperty("seasons") List<Object> seasons,
+        @JsonProperty("info") Info info,
+        @JsonProperty("episodes") Map<String, List<Episode>> episodes) {
+    public record Info(
+            @JsonProperty("name") String name,
+            @JsonProperty("cover") String cover,
+            @JsonProperty("plot") String plot,
+            @JsonProperty("series_cast") String seriesCast,
+            @JsonProperty("director") String director,
+            @JsonProperty("genre") String genre,
+            @JsonProperty("releaseDate") String releaseDate,
+            @JsonProperty("release_date") String release_date,
+            @JsonProperty("last_modified") String lastModified,
+            @JsonProperty("rating") String rating,
+            @JsonProperty("rating_5based") String rating5Based,
+            @JsonProperty("backdrop_path") List<String> backdropPath,
+            @JsonProperty("tmdb") String tmdb,
+            @JsonProperty("youtube_trailer") String youtubeTrailer,
+            @JsonProperty("episode_run_time") String episodeRunTime,
+            @JsonProperty("category_id") String categoryId,
+            @JsonProperty("category_ids") List<Integer> categoryIds) {
     }
 
-    @Data
-    public static class Episode {
-        @JsonProperty("id")
-        private String id;
-        @JsonProperty("episode_num")
-        private int episodeNum;
-        @JsonProperty("title")
-        private String title;
-        @JsonProperty("container_extension")
-        private String containerExtension;
-        @JsonProperty("info")
-        private EpisodeInfo info;
-        // Getters and setters omitted for brevity
+    public record Episode(
+            @JsonProperty("id") String id,
+            @JsonProperty("episode_num") int episodeNum,
+            @JsonProperty("title") String title,
+            @JsonProperty("container_extension") String containerExtension,
+            @JsonProperty("info") EpisodeInfo info) {
     }
 
-    @Data
-    public static class EpisodeInfo {
-        @JsonProperty("air_date")
-        private String airDate;
-        @JsonProperty("rating")
-        private int rating;
-        @JsonProperty("id")
-        private int id;
-        @JsonProperty("movie_image")
-        private String movieImage;
-        @JsonProperty("duration_secs")
-        private int durationSecs;
-        @JsonProperty("duration")
-        private String duration;
-        @JsonProperty("video")
-        private Object video;
-        // Getters and setters omitted for brevity
+    public record EpisodeInfo(
+            @JsonProperty("air_date") String airDate,
+            @JsonProperty("rating") int rating,
+            @JsonProperty("id") int id,
+            @JsonProperty("movie_image") String movieImage,
+            @JsonProperty("duration_secs") int durationSecs,
+            @JsonProperty("duration") String duration,
+            @JsonProperty("video") Object video) {
     }
 }

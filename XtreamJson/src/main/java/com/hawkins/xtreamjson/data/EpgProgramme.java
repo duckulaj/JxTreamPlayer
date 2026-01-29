@@ -6,26 +6,13 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 
-import lombok.Data;
-
-@Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class EpgProgramme {
-    @JacksonXmlProperty(isAttribute = true)
-    private String start;
-
-    @JacksonXmlProperty(isAttribute = true)
-    private String stop;
-
-    @JacksonXmlProperty(isAttribute = true)
-    private String channel;
-
-    @JacksonXmlProperty(localName = "title")
-    private String title;
-
-    @JacksonXmlProperty(localName = "desc")
-    private String desc;
-
+public record EpgProgramme(
+        @JacksonXmlProperty(isAttribute = true) String start,
+        @JacksonXmlProperty(isAttribute = true) String stop,
+        @JacksonXmlProperty(isAttribute = true) String channel,
+        @JacksonXmlProperty(localName = "title") String title,
+        @JacksonXmlProperty(localName = "desc") String desc) {
     public long getDurationMinutes() {
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss Z");

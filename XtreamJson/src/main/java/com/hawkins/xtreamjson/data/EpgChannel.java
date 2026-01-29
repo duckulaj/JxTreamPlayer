@@ -3,26 +3,22 @@ package com.hawkins.xtreamjson.data;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
-import lombok.Data;
-
-@Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class EpgChannel {
-    @JacksonXmlProperty(isAttribute = true)
-    private String id;
-
-    @JacksonXmlProperty(localName = "display-name")
-    private String displayName;
-
-    @JacksonXmlProperty(localName = "icon")
-    private Icon icon;
-
-    @Data
-    public static class Icon {
-        @JacksonXmlProperty(isAttribute = true)
-        private String src;
+public record EpgChannel(
+        @JacksonXmlProperty(isAttribute = true) String id,
+        @JacksonXmlProperty(localName = "display-name") String displayName,
+        @JacksonXmlProperty(localName = "icon") Icon icon,
+        String streamUrl,
+        String categoryId) {
+    public record Icon(
+            @JacksonXmlProperty(isAttribute = true) String src) {
     }
 
-    private String streamUrl;
-    private String categoryId;
+    public EpgChannel withDisplayName(String newName) {
+        return new EpgChannel(id, newName, icon, streamUrl, categoryId);
+    }
+
+    public EpgChannel withStreamInfo(String newStreamUrl, String newCategoryId) {
+        return new EpgChannel(id, displayName, icon, newStreamUrl, newCategoryId);
+    }
 }

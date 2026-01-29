@@ -70,17 +70,19 @@ public class EpgProcessorService {
         Map<String, ChannelInfo> channelInfoMap = buildChannelStreamUrlMap(credentials);
 
         // Enrich channels with stream URLs and Category IDs
-        for (EpgChannel channel : filteredChannels) {
-            var info = channelInfoMap.get(channel.getId());
-            if (info != null) {
-                channel.setStreamUrl(info.url);
-                channel.setCategoryId(info.categoryId);
-            }
-        }
+        List<EpgChannel> enrichedChannels = filteredChannels.stream()
+                .map(channel -> {
+                    var info = channelInfoMap.get(channel.id());
+                    if (info != null) {
+                        return channel.withStreamInfo(info.url, info.categoryId);
+                    }
+                    return channel;
+                })
+                .collect(Collectors.toList());
 
         // Process programmes into view models
         Map<String, List<EpgProgrammeViewModel>> programmesByChannel = processProgrammes(
-                epgData.getProgrammes(), filteredChannels, timelineStart, channelInfoMap);
+                epgData.getProgrammes(), enrichedChannels, timelineStart, channelInfoMap);
 
         // Calculate current time offset
         long nowOffset = ChronoUnit.MINUTES.between(timelineStart, now) * PIXELS_PER_MINUTE;
@@ -89,8 +91,8 @@ public class EpgProcessorService {
         }
 
         // Calculate active categories
-        List<String> activeCategoryIds = filteredChannels.stream()
-                .map(EpgChannel::getCategoryId)
+        List<String> activeCategoryIds = enrichedChannels.stream()
+                .map(EpgChannel::categoryId)
                 .filter(id -> id != null && !id.isEmpty())
                 .distinct()
                 .collect(Collectors.toList());
@@ -100,7 +102,7 @@ public class EpgProcessorService {
         activeCategories
                 .sort(java.util.Comparator.comparing(LiveCategory::getCategoryName, String.CASE_INSENSITIVE_ORDER));
 
-        return new EpgViewModel(filteredChannels, programmesByChannel, timelineSlots, nowOffset, activeCategories);
+        return new EpgViewModel(enrichedChannels, programmesByChannel, timelineSlots, nowOffset, activeCategories);
     }
 
     /**
@@ -119,7 +121,7 @@ public class EpgProcessorService {
         if (!prefixes.isEmpty()) {
             for (var channel : channels) {
                 for (String prefix : prefixes) {
-                    if (channel.getDisplayName().startsWith(prefix)) {
+                    if (channel.displayName().startsWith(prefix)) {
                         filteredChannels.add(channel);
                         break;
                     }
@@ -130,16 +132,17 @@ public class EpgProcessorService {
         }
 
         // Remove country identifier and colon from channel display names
-        for (var channel : filteredChannels) {
-            String displayName = channel.getDisplayName();
-            int colonIndex = displayName.indexOf(':');
-            if (colonIndex != -1 && colonIndex < displayName.length() - 1) {
-                String cleanedName = displayName.substring(colonIndex + 1).trim();
-                channel.setDisplayName(cleanedName);
-            }
-        }
-
-        return filteredChannels;
+        return filteredChannels.stream()
+                .map(channel -> {
+                    String displayName = channel.displayName();
+                    int colonIndex = displayName.indexOf(':');
+                    if (colonIndex != -1 && colonIndex < displayName.length() - 1) {
+                        String cleanedName = displayName.substring(colonIndex + 1).trim();
+                        return channel.withDisplayName(cleanedName);
+                    }
+                    return channel;
+                })
+                .collect(Collectors.toList());
     }
 
     /**
@@ -195,10 +198,10 @@ public class EpgProcessorService {
 
         // Group raw programmes by channel
         var rawGrouped = programmes.stream()
-                .collect(Collectors.groupingBy(EpgProgramme::getChannel));
+                .collect(Collectors.groupingBy(EpgProgramme::channel));
 
         for (var channel : filteredChannels) {
-            String channelId = channel.getId();
+            String channelId = channel.id();
             if (!rawGrouped.containsKey(channelId)) {
                 continue;
             }
@@ -214,7 +217,7 @@ public class EpgProcessorService {
                         viewModels.add(vm);
                     }
                 } catch (Exception e) {
-                    log.error("Error processing programme: {}", prog.getTitle(), e);
+                    log.error("Error processing programme: {}", prog.title(), e);
                 }
             }
             programmesByChannel.put(channelId, viewModels);
@@ -233,8 +236,8 @@ public class EpgProcessorService {
             Map<String, ChannelInfo> channelInfoMap) {
 
         // Parse with zone offset and convert to UTC
-        ZonedDateTime startZoned = ZonedDateTime.parse(prog.getStart(), XML_FORMATTER);
-        ZonedDateTime stopZoned = ZonedDateTime.parse(prog.getStop(), XML_FORMATTER);
+        ZonedDateTime startZoned = ZonedDateTime.parse(prog.start(), XML_FORMATTER);
+        ZonedDateTime stopZoned = ZonedDateTime.parse(prog.stop(), XML_FORMATTER);
 
         // Convert to UTC
         LocalDateTime start = startZoned.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
@@ -264,21 +267,21 @@ public class EpgProcessorService {
             return null;
         }
 
-        EpgProgrammeViewModel vm = new EpgProgrammeViewModel();
-        vm.setTitle(prog.getTitle());
-        vm.setDesc(prog.getDesc());
-        vm.setStart(prog.getStart());
-        vm.setStop(prog.getStop());
-        vm.setLeft(displayLeft);
-        vm.setWidth(displayWidth);
-        vm.setStyle("left: " + displayLeft + "px; width: " + displayWidth + "px; position: absolute;");
-
-        // Set stream URL if available for this channel
+        String style = "left: " + displayLeft + "px; width: " + displayWidth + "px; position: absolute;";
+        String streamUrl = null;
         if (channelInfoMap.containsKey(channelId)) {
-            vm.setStreamUrl(channelInfoMap.get(channelId).url);
+            streamUrl = channelInfoMap.get(channelId).url;
         }
 
-        return vm;
+        return new EpgProgrammeViewModel(
+                prog.title(),
+                prog.desc(),
+                prog.start(),
+                prog.stop(),
+                displayLeft,
+                displayWidth,
+                style,
+                streamUrl);
     }
 
     /**

@@ -73,12 +73,12 @@ public class ApiService {
 
         // Create a set of filtered channel IDs for quick lookup
         Set<String> filteredChannelIds = filteredChannels.stream()
-                .map(EpgChannel::getId)
+                .map(EpgChannel::id)
                 .collect(Collectors.toSet());
 
         // Filter programmes to only include those for filtered channels
         List<EpgProgramme> filteredProgrammes = epgData.getProgrammes().stream()
-                .filter(programme -> filteredChannelIds.contains(programme.getChannel()))
+                .filter(programme -> filteredChannelIds.contains(programme.channel()))
                 .collect(Collectors.toList());
 
         // Create a new container with filtered data
@@ -171,7 +171,7 @@ public class ApiService {
 
         return channels.stream()
                 .filter(channel -> {
-                    String displayName = channel.getDisplayName();
+                    String displayName = channel.displayName();
                     if (displayName == null)
                         return false;
                     for (String prefix : prefixes) {
