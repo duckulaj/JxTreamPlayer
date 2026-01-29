@@ -3,7 +3,7 @@
     <ul class="list-group">
         <th:block th:each="movie : ${movies}">
             <li class="list-group-item">
-                <a th:href="@{'/stream.html'(url=${movie.directSource},title=${movie.name})}" th:text="${movie.name}"></a>
+                <a class="clickable-movie-card" th:href="@{'/stream.html'(url=${movie.directSource},title=${movie.name})}" th:text="${movie.name}" th:attr="data-tmdb=${movie.tmdb}"></a>
             </li>
         </th:block>
     </ul>

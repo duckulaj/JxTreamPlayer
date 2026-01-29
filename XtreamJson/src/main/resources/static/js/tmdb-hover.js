@@ -77,11 +77,27 @@
         initTmdbHover(document);
     }
 
-    // HTMX support
-    if (window.htmx) {
-        document.addEventListener('htmx:afterSwap', function (evt) {
-            initTmdbHover(evt.target || evt.detail?.target);
+    // Support for dynamic content (HTMX, manual fetch, etc.)
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => {
+                if (node.nodeType === 1) { // Element node
+                    if (node.classList.contains('clickable-movie-card')) {
+                        initTmdbHover(node.parentElement || node);
+                    } else if (node.querySelectorAll) {
+                        const cards = node.querySelectorAll('.clickable-movie-card');
+                        if (cards.length > 0) {
+                            initTmdbHover(node);
+                        }
+                    }
+                }
+            });
         });
-    }
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
 
 })();

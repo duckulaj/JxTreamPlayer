@@ -7,7 +7,7 @@
         <div class="d-flex flex-wrap">
             <div class="me-2 mb-2" th:each="movie : ${movies}" style="width: 160px;">
                 <a th:href="@{/stream.html(url=${movie.directSource},title=${movie.name})}" style="text-decoration:none;color:inherit;">
-                    <div class="card" style="width:100%;">
+                    <div class="card clickable-movie-card" style="width:100%;" th:attr="data-tmdb=${movie.tmdb}">
                         <img th:if="${movie.streamIcon} != null" th:src="${movie.streamIcon}" class="card-img-top" style="height:90px;object-fit:cover;" alt="">
                         <div class="card-body p-2">
                             <h6 class="card-title mb-0" th:text="${movie.name}" style="font-size:0.85rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;"></h6>
@@ -23,7 +23,7 @@
         <div class="d-flex flex-wrap">
             <div class="me-2 mb-2" th:each="serie : ${series}" style="width: 160px;">
                 <a th:href="@{/seasonsBySeries(seriesId=${serie.seriesId})}" style="text-decoration:none;color:inherit;">
-                    <div class="card" style="width:100%;">
+                    <div class="card clickable-movie-card" style="width:100%;" th:attr="data-tmdb=${serie.tmdb}">
                         <img th:if="${serie.cover} != null" th:src="${serie.cover}" class="card-img-top" style="height:90px;object-fit:cover;" alt="">
                         <div class="card-body p-2">
                             <h6 class="card-title mb-0" th:text="${serie.name}" style="font-size:0.85rem;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;"></h6>
