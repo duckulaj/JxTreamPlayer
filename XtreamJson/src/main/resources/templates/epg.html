@@ -14,7 +14,7 @@
                 <!-- Empty corner -->
             </div>
             <div th:each="channel : ${channels}" class="channel-row">
-                <img th:if="${channel.icon != null}" th:src="${channel.icon.src}" style="width: 30px; height: 30px; margin-right: 10px;">
+                <img th:if="${channel.icon != null}" th:src="@{/proxy/image(url=${channel.icon.src})}" style="width: 30px; height: 30px; margin-right: 10px;">
                 <span th:text="${channel.displayName}">Channel Name</span>
             </div>
         </div>

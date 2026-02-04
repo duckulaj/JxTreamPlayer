@@ -176,32 +176,69 @@ public class ProxyController {
         OutputStream outputStream = null;
 
         try {
-            URI initialUri = proxyUrlValidator.validate(imageUrl);
-            URL url = initialUri.toURL();
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setConnectTimeout(10000);
-            connection.setReadTimeout(15000);
-            connection.setInstanceFollowRedirects(true);
+            log.debug("Proxying image: {}", imageUrl);
+            URI currentUri = proxyUrlValidator.validate(imageUrl);
+            URL url = currentUri.toURL();
 
-            // Fake User-Agent to avoid some basic blocks
-            connection.setRequestProperty("User-Agent", "Mozilla/5.0");
+            int redirectCount = 0;
+            int responseCode;
 
-            int responseCode = connection.getResponseCode();
-            if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP
-                    || responseCode == HttpURLConnection.HTTP_MOVED_PERM) {
-                String newUrl = connection.getHeaderField("Location");
-                URI redirectUri = new URI(url.toString()).resolve(newUrl);
-                redirectUri = proxyUrlValidator.validate(redirectUri);
-                connection = (HttpURLConnection) redirectUri.toURL().openConnection();
+            while (true) {
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setConnectTimeout(10000);
+                connection.setReadTimeout(15000);
+                connection.setInstanceFollowRedirects(false); // Handle manually to allow protocol changes
+
+                // Standard User-Agent to avoid blocks
+                connection.setRequestProperty("User-Agent",
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+
                 responseCode = connection.getResponseCode();
+
+                if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP ||
+                        responseCode == HttpURLConnection.HTTP_MOVED_PERM ||
+                        responseCode == 307 ||
+                        responseCode == 308) {
+
+                    if (redirectCount >= 5) {
+                        log.error("Too many redirects for image: {}", imageUrl);
+                        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                        return;
+                    }
+
+                    String location = connection.getHeaderField("Location");
+                    if (location == null) {
+                        log.error("Redirect with no Location header for image: {}", imageUrl);
+                        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                        return;
+                    }
+
+                    connection.disconnect();
+                    URI redirectUri = new URI(url.toString()).resolve(location);
+                    redirectUri = proxyUrlValidator.validate(redirectUri);
+                    url = redirectUri.toURL();
+                    redirectCount++;
+                    log.debug("Following image redirect ({}) to: {}", redirectCount, url);
+                    continue;
+                }
+                break;
             }
 
             if (responseCode >= 400) {
+                log.warn("Upstream image returned error {}: {}", responseCode, imageUrl);
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
 
-            response.setContentType(connection.getContentType());
+            if (connection == null) {
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                return;
+            }
+
+            String contentType = connection.getContentType();
+            if (contentType != null) {
+                response.setContentType(contentType);
+            }
 
             inputStream = connection.getInputStream();
             outputStream = response.getOutputStream();

@@ -39,7 +39,7 @@
       >
         <img
           th:if="${channel.icon != null}"
-          th:src="${channel.icon.src}"
+          th:src="@{/proxy/image(url=${channel.icon.src})}"
           style="width: 30px; height: 30px; margin-right: 10px"
         />
         <span th:text="${channel.displayName}">Channel Name</span>
