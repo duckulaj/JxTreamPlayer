@@ -1,5 +1,6 @@
 package com.hawkins.xtreamjson.service;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,12 +9,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-
-import org.springframework.stereotype.Service;
-
-import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+
+import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.hawkins.xtreamjson.data.EpgContainer;

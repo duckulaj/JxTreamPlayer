@@ -21,13 +21,12 @@ import com.hawkins.xtreamjson.repository.LiveCategoryRepository;
 import com.hawkins.xtreamjson.repository.LiveStreamRepository;
 import com.hawkins.xtreamjson.repository.SeasonRepository;
 import com.hawkins.xtreamjson.repository.SeriesRepository;
+import com.hawkins.xtreamjson.service.ApplicationPropertiesService;
+import com.hawkins.xtreamjson.service.EpgProcessorService;
+import com.hawkins.xtreamjson.service.EpgService;
 import com.hawkins.xtreamjson.service.IptvProviderService;
 import com.hawkins.xtreamjson.service.JsonService;
 import com.hawkins.xtreamjson.service.StrmService;
-
-import com.hawkins.xtreamjson.service.EpgService;
-import com.hawkins.xtreamjson.service.EpgProcessorService;
-import com.hawkins.xtreamjson.service.ApplicationPropertiesService;
 import com.hawkins.xtreamjson.util.StreamUrlHelper;
 
 import lombok.extern.slf4j.Slf4j;

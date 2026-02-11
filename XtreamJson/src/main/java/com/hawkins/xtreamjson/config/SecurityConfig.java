@@ -15,8 +15,8 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
-        @Bean
-        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
                 http
                                 .authorizeHttpRequests((requests) -> requests
                                                 .requestMatchers("/admin/**", "/api/admin/**", "/providers/**",
@@ -36,8 +36,8 @@ public class SecurityConfig {
                 return http.build();
         }
 
-        @Bean
-        public InMemoryUserDetailsManager userDetailsService() {
+    @Bean
+    InMemoryUserDetailsManager userDetailsService() {
                 UserDetails admin = User.builder()
                                 .username("admin")
                                 .password("$2a$05$cRtC6BGeZG/yS42B2J8yye4K.zfozPF3M4TfQ50eLtSeq/xWvz/1a")
@@ -46,8 +46,8 @@ public class SecurityConfig {
                 return new InMemoryUserDetailsManager(admin);
         }
 
-        @Bean
-        public PasswordEncoder passwordEncoder() {
+    @Bean
+    PasswordEncoder passwordEncoder() {
                 return new BCryptPasswordEncoder();
         }
 }

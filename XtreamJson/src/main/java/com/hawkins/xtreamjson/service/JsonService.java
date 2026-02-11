@@ -22,11 +22,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import jakarta.annotation.PreDestroy;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -58,6 +55,7 @@ import com.hawkins.xtreamjson.util.StreamUrlHelper;
 import com.hawkins.xtreamjson.util.XstreamCredentials;
 import com.hawkins.xtreamjson.util.XtreamCodesUtils;
 
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

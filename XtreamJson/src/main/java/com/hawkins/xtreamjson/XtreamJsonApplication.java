@@ -31,7 +31,7 @@ public class XtreamJsonApplication {
     }
 
     @Bean
-    public ObjectMapper objectMapper() {
+    ObjectMapper objectMapper() {
         return new ObjectMapper();
     }
 }
