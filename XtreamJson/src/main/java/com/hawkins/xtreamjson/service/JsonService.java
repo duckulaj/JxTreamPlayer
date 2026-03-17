@@ -704,11 +704,43 @@ public class JsonService {
 		return episodeRepository.findBySeasonId(seasonId);
 	}
 
+	// --- search helpers ---
+	private static final java.util.regex.Pattern YEAR_ONLY = java.util.regex.Pattern.compile("^\\d{4}$");
+	private static final java.util.regex.Pattern YEAR_IN_TITLE = java.util.regex.Pattern
+			.compile("(?:\\(|\\[|\\s)(19\\d{2}|20\\d{2})(?:\\)|\\]|\\s|$)");
+
+	private static boolean isYearQuery(String q) {
+		return q != null && YEAR_ONLY.matcher(q.trim()).matches();
+	}
+
+	private static String extractYearFromTitle(String title) {
+		if (title == null)
+			return null;
+		var m = YEAR_IN_TITLE.matcher(title);
+		return m.find() ? m.group(1) : null;
+	}
+
 	public List<MovieStream> searchMoviesByTitle(String q) {
 		if (q == null || q.isBlank())
 			return List.of();
 		try {
-			List<MovieStream> results = movieStreamRepository.searchByNameContaining(q);
+			String query = q.trim();
+			// MovieStream doesn't store a release date/year, so for year-only search we do a
+			// best-effort filter based on a year token in the title.
+			if (isYearQuery(query)) {
+				List<MovieStream> candidates = movieStreamRepository.searchByNameContaining(query);
+				List<MovieStream> filtered = new java.util.ArrayList<>();
+				for (MovieStream m : candidates) {
+					String year = extractYearFromTitle(m.getName());
+					if (query.equals(year)) {
+						m.setName(XtreamCodesUtils.cleanTitle(m.getName()));
+						filtered.add(m);
+					}
+				}
+				return filtered;
+			}
+
+			List<MovieStream> results = movieStreamRepository.searchByNameContaining(query);
 			results.forEach(m -> m.setName(XtreamCodesUtils.cleanTitle(m.getName())));
 			return results;
 		} catch (Exception e) {
@@ -721,7 +753,11 @@ public class JsonService {
 		if (q == null || q.isBlank())
 			return List.of();
 		try {
-			return seriesRepository.searchByNameContaining(q);
+			String query = q.trim();
+			if (isYearQuery(query)) {
+				return seriesRepository.searchByReleaseYear(query);
+			}
+			return seriesRepository.searchByNameContaining(query);
 		} catch (Exception e) {
 			log.warn("searchSeriesByTitle failed for '{}': {}", q, e.getMessage());
 			return List.of();

@@ -14,4 +14,7 @@ public interface SeriesRepository extends JpaRepository<Series, Integer>,
 
     @Query("SELECT s FROM Series s WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', :q, '%'))")
     List<Series> searchByNameContaining(@Param("q") String q);
+
+    @Query("SELECT s FROM Series s WHERE s.releaseDate IS NOT NULL AND s.releaseDate LIKE CONCAT(:year, '%')")
+    List<Series> searchByReleaseYear(@Param("year") String year);
 }
