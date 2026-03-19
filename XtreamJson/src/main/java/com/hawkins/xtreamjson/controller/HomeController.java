@@ -16,18 +16,15 @@ import com.hawkins.xtreamjson.data.LiveStream;
 import com.hawkins.xtreamjson.data.MovieStream;
 import com.hawkins.xtreamjson.data.Series;
 import com.hawkins.xtreamjson.data.SeriesCategory;
-import com.hawkins.xtreamjson.repository.EpisodeRepository;
-import com.hawkins.xtreamjson.repository.LiveCategoryRepository;
-import com.hawkins.xtreamjson.repository.LiveStreamRepository;
-import com.hawkins.xtreamjson.repository.SeasonRepository;
-import com.hawkins.xtreamjson.repository.SeriesRepository;
 import com.hawkins.xtreamjson.service.ApplicationPropertiesService;
 import com.hawkins.xtreamjson.service.EpgProcessorService;
 import com.hawkins.xtreamjson.service.EpgService;
 import com.hawkins.xtreamjson.service.IptvProviderService;
 import com.hawkins.xtreamjson.service.JsonService;
+import com.hawkins.xtreamjson.service.SeriesService;
 import com.hawkins.xtreamjson.service.StrmService;
 import com.hawkins.xtreamjson.util.StreamUrlHelper;
+import com.hawkins.xtreamjson.util.XstreamCredentials;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,12 +32,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class HomeController {
     private final JsonService jsonService;
-    private final LiveStreamRepository liveStreamRepository;
     private final IptvProviderService providerService;
-    private final SeriesRepository seriesRepository;
-    private final SeasonRepository seasonRepository;
-    private final EpisodeRepository episodeRepository;
-
+    private final SeriesService seriesService;
     private final StrmService strmService;
     private final EpgService epgService;
     private final EpgProcessorService epgProcessorService;
@@ -49,17 +42,13 @@ public class HomeController {
     private static final ExecutorService resetExecutor = Executors.newSingleThreadExecutor();
     private static final AtomicReference<Future<?>> resetFutureRef = new AtomicReference<>();
 
-    public HomeController(JsonService jsonService, LiveCategoryRepository liveCategoryRepository,
-            LiveStreamRepository liveStreamRepository, IptvProviderService providerService,
-            SeriesRepository seriesRepository, SeasonRepository seasonRepository, EpisodeRepository episodeRepository,
-            StrmService strmService, EpgService epgService, EpgProcessorService epgProcessorService,
+    public HomeController(JsonService jsonService, IptvProviderService providerService,
+            SeriesService seriesService, StrmService strmService, EpgService epgService,
+            EpgProcessorService epgProcessorService,
             ApplicationPropertiesService applicationPropertiesService) {
         this.jsonService = jsonService;
-        this.liveStreamRepository = liveStreamRepository;
         this.providerService = providerService;
-        this.seriesRepository = seriesRepository;
-        this.seasonRepository = seasonRepository;
-        this.episodeRepository = episodeRepository;
+        this.seriesService = seriesService;
         this.strmService = strmService;
         this.epgService = epgService;
         this.epgProcessorService = epgProcessorService;
@@ -115,13 +104,12 @@ public class HomeController {
 
     @GetMapping("/liveCategoryItems")
     public String liveCategoryItems(@RequestParam String categoryId, Model model) {
-        List<LiveStream> items = liveStreamRepository.findByCategoryId(categoryId);
+        List<LiveStream> items = jsonService.getLiveStreamsByCategory(categoryId);
         var credentials = providerService
-                .getSelectedProvider().map(p -> new com.hawkins.xtreamjson.util.XstreamCredentials(p.getApiUrl(),
-                        p.getUsername(), p.getPassword()))
-                .orElse(new com.hawkins.xtreamjson.util.XstreamCredentials("", "", ""));
+                .getSelectedProvider().map(p -> new XstreamCredentials(p.getApiUrl(), p.getUsername(), p.getPassword()))
+                .orElse(new XstreamCredentials("", "", ""));
         for (var item : items) {
-            String url = com.hawkins.xtreamjson.util.StreamUrlHelper.buildLiveUrl(
+            String url = StreamUrlHelper.buildLiveUrl(
                     credentials.getApiUrl(),
                     credentials.getUsername(),
                     credentials.getPassword(),
@@ -145,11 +133,10 @@ public class HomeController {
     public String movieCategoryItems(@RequestParam String categoryId, Model model) {
         List<MovieStream> movies = jsonService.getMoviesByCategory(categoryId);
         var credentials = providerService
-                .getSelectedProvider().map(p -> new com.hawkins.xtreamjson.util.XstreamCredentials(p.getApiUrl(),
-                        p.getUsername(), p.getPassword()))
-                .orElse(new com.hawkins.xtreamjson.util.XstreamCredentials("", "", ""));
+                .getSelectedProvider().map(p -> new XstreamCredentials(p.getApiUrl(), p.getUsername(), p.getPassword()))
+                .orElse(new XstreamCredentials("", "", ""));
         for (var movie : movies) {
-            String url = com.hawkins.xtreamjson.util.StreamUrlHelper.buildVodUrl(
+            String url = StreamUrlHelper.buildVodUrl(
                     credentials.getApiUrl(),
                     credentials.getUsername(),
                     credentials.getPassword(),
@@ -216,7 +203,7 @@ public class HomeController {
 
     @GetMapping("/seriesCategoryItems")
     public String seriesCategoryItems(@RequestParam String categoryId, Model model) {
-        List<Series> seriesList = seriesRepository.findByCategoryId(categoryId);
+        List<Series> seriesList = seriesService.getSeriesByCategory(categoryId);
         model.addAttribute("series", seriesList);
         return "fragments/seriesCategoryItems :: series-list";
     }
@@ -225,12 +212,8 @@ public class HomeController {
     public String seasonsBySeries(@RequestParam String seriesId,
             @RequestParam(required = false) String seriesImage,
             Model model) {
-        var seasons = seasonRepository.findBySeriesId(seriesId);
-        // log.info("[seasonsBySeries] seriesId={}, found {} seasons", seriesId, seasons
-        // != null ? seasons.size() : 0);
-        // Use utility method for image selection
-        seriesImage = com.hawkins.xtreamjson.util.StreamViewUtils.resolveSeriesImage(seriesId, seriesImage,
-                seriesRepository);
+        var seasons = seriesService.getSeasonsBySeries(seriesId);
+        seriesImage = seriesService.resolveSeriesImage(seriesId, seriesImage);
         model.addAttribute("seasons", seasons);
         model.addAttribute("seriesImage", seriesImage);
         return "fragments/seasonsBySeries :: seasons-list";
@@ -241,11 +224,8 @@ public class HomeController {
             @RequestParam String seasonId,
             @RequestParam(required = false) String seriesImage,
             Model model) {
-        var episodes = episodeRepository.findBySeriesIdAndSeasonId(seriesId, seasonId);
-        // Use utility method for image selection
-        seriesImage = com.hawkins.xtreamjson.util.StreamViewUtils.resolveSeriesImage(seriesId, seriesImage,
-                seriesRepository);
-        // ...existing code for provider/stream setup...
+        var episodes = seriesService.getEpisodesBySeriesAndSeason(seriesId, seasonId);
+        seriesImage = seriesService.resolveSeriesImage(seriesId, seriesImage);
         model.addAttribute("episodes", episodes);
         model.addAttribute("seriesImage", seriesImage);
         return "fragments/episodesBySeason :: episodes-list";
@@ -292,11 +272,10 @@ public class HomeController {
         // Populate directSource for each movie using selected provider credentials (so
         // results behave like movieCategoryItems)
         var credentials = providerService
-                .getSelectedProvider().map(p -> new com.hawkins.xtreamjson.util.XstreamCredentials(p.getApiUrl(),
-                        p.getUsername(), p.getPassword()))
-                .orElse(new com.hawkins.xtreamjson.util.XstreamCredentials("", "", ""));
+                .getSelectedProvider().map(p -> new XstreamCredentials(p.getApiUrl(), p.getUsername(), p.getPassword()))
+                .orElse(new XstreamCredentials("", "", ""));
         for (var movie : movies) {
-            String url = com.hawkins.xtreamjson.util.StreamUrlHelper.buildVodUrl(
+            String url = StreamUrlHelper.buildVodUrl(
                     credentials.getApiUrl(),
                     credentials.getUsername(),
                     credentials.getPassword(),
@@ -313,8 +292,7 @@ public class HomeController {
         var epgData = epgService.loadEpgData();
         String includedCountries = applicationPropertiesService.getCurrentProperties().getIncludedCountries();
         var credentials = providerService.getSelectedProvider()
-                .map(p -> new com.hawkins.xtreamjson.util.XstreamCredentials(p.getApiUrl(), p.getUsername(),
-                        p.getPassword()))
+                .map(p -> new XstreamCredentials(p.getApiUrl(), p.getUsername(), p.getPassword()))
                 .orElse(null);
 
         var viewModel = epgProcessorService.processEpgData(epgData, includedCountries, credentials);
@@ -333,8 +311,7 @@ public class HomeController {
         var epgData = epgService.loadEpgData();
         String includedCountries = applicationPropertiesService.getCurrentProperties().getIncludedCountries();
         var credentials = providerService.getSelectedProvider()
-                .map(p -> new com.hawkins.xtreamjson.util.XstreamCredentials(p.getApiUrl(), p.getUsername(),
-                        p.getPassword()))
+                .map(p -> new XstreamCredentials(p.getApiUrl(), p.getUsername(), p.getPassword()))
                 .orElse(null);
 
         var viewModel = epgProcessorService.processEpgData(epgData, includedCountries, credentials);
