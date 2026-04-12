@@ -36,6 +36,18 @@
                    class="card-img-top" alt="Movie Thumbnail">
               <div class="card-body">
                 <h6 class="card-title" th:text="${movie.name}"></h6>
+                <div class="movie-actions d-flex justify-content-center gap-3 mt-2">
+                  <a th:href="@{/stream.html(url=${movie.directSource},title=${movie.name})}"
+                     class="movie-action-btn" title="Play"
+                     onclick="event.stopPropagation();">
+                    <i class="bi bi-play-circle-fill"></i>
+                  </a>
+                  <a th:href="@{/proxy/download(url=${movie.directSource},title=${movie.name},ext=${movie.containerExtension})}"
+                     class="movie-action-btn" title="Download"
+                     onclick="event.stopPropagation();">
+                    <i class="bi bi-download"></i>
+                  </a>
+                </div>
               </div>
             </div>
           </a>
@@ -89,4 +101,7 @@
   .movie-category-container { width: 100%; }
   .clickable-movie-card { cursor: pointer; transition: box-shadow 0.2s; }
   .clickable-movie-card:hover { box-shadow: 0 0 10px #007bff44; }
+  .movie-actions { border-top: 1px solid #eee; padding-top: 0.5rem; }
+  .movie-action-btn { font-size: 1.4rem; color: #555; transition: color 0.2s, transform 0.15s; }
+  .movie-action-btn:hover { color: #007bff; transform: scale(1.2); }
 </style>

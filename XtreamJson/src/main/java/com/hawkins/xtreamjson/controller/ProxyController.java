@@ -1,10 +1,12 @@
 package com.hawkins.xtreamjson.controller;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.List;
@@ -255,6 +257,104 @@ public class ProxyController {
             response.setStatus(e.getStatusCode());
         } catch (Exception e) {
             log.error("Error proxying image: {}", imageUrl, e);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
+    @GetMapping("/proxy/download")
+    public void proxyDownload(@RequestParam("url") String streamUrl,
+            @RequestParam("title") String title,
+            @RequestParam("ext") String ext,
+            HttpServletRequest request,
+            HttpServletResponse response) {
+        HttpURLConnection connection = null;
+        InputStream inputStream = null;
+        OutputStream outputStream = null;
+
+        try {
+            log.debug("Proxying download: {}", streamUrl);
+            URI initialUri = proxyUrlValidator.validate(streamUrl);
+            URL url = initialUri.toURL();
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(15000);
+            connection.setReadTimeout(60000);
+            connection.setInstanceFollowRedirects(false);
+            connection.setRequestProperty("User-Agent",
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+
+            int responseCode = connection.getResponseCode();
+
+            int redirectCount = 0;
+            while ((responseCode == HttpURLConnection.HTTP_MOVED_TEMP ||
+                    responseCode == HttpURLConnection.HTTP_MOVED_PERM ||
+                    responseCode == 307 ||
+                    responseCode == 308) && redirectCount < 5) {
+                String newUrl = connection.getHeaderField("Location");
+                connection.disconnect();
+                URI redirectUri = new URI(url.toString()).resolve(newUrl);
+                redirectUri = proxyUrlValidator.validate(redirectUri);
+                url = redirectUri.toURL();
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setConnectTimeout(15000);
+                connection.setReadTimeout(60000);
+                connection.setInstanceFollowRedirects(false);
+                connection.setRequestProperty("User-Agent",
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+                responseCode = connection.getResponseCode();
+                redirectCount++;
+            }
+
+            if (responseCode >= 400) {
+                log.error("Download proxy received error code: {}", responseCode);
+                response.setStatus(responseCode);
+                return;
+            }
+
+            // Sanitize title and ext to produce a safe filename
+            String safeTitle = title.replaceAll("[\\\\/:*?\"<>|]", "_");
+            String safeExt = ext.replaceAll("[^a-zA-Z0-9]", "");
+            String filename = safeTitle + "." + safeExt;
+
+            response.setStatus(responseCode);
+            String contentType = connection.getContentType();
+            if (contentType != null) {
+                response.setContentType(contentType);
+            }
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+
+            long contentLength = connection.getContentLengthLong();
+            if (contentLength > 0) {
+                response.setContentLengthLong(contentLength);
+            }
+
+            inputStream = new BufferedInputStream(connection.getInputStream(), 256 * 1024);
+            outputStream = response.getOutputStream();
+
+            byte[] buffer = new byte[256 * 1024];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+            outputStream.flush();
+
+        } catch (ProxyValidationException e) {
+            log.warn("Blocked download proxy request: {}", e.getMessage());
+            response.setStatus(e.getStatusCode());
+        } catch (org.springframework.web.context.request.async.AsyncRequestNotUsableException e) {
+            log.debug("Client disconnected during download: {}", streamUrl);
+        } catch (IOException | URISyntaxException e) {
+            log.error("Error proxying download: {}", streamUrl, e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         } finally {
             if (inputStream != null) {
