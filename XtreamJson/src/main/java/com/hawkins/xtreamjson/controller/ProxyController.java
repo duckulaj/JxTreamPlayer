@@ -154,7 +154,7 @@ public class ProxyController {
             // pausing)
             // The browser cancels the current request and starts a new Range request
             log.debug("Client disconnected during stream (likely due to seeking): {}", streamUrl);
-        } catch (Exception e) {
+        } catch (IOException | URISyntaxException e) {
             log.error("Error proxying stream: {}", streamUrl, e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         } finally {
@@ -255,7 +255,7 @@ public class ProxyController {
         } catch (ProxyValidationException e) {
             log.warn("Blocked proxy image request: {}", e.getMessage());
             response.setStatus(e.getStatusCode());
-        } catch (Exception e) {
+        } catch (IOException | URISyntaxException e) {
             log.error("Error proxying image: {}", imageUrl, e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         } finally {
